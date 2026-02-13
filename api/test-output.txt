@@ -1,0 +1,24 @@
+≡ƒº¬ Testing Session Flow
+
+1. Starting session...
+   Γ£à Session ID: acd93cf0-b88a-4b12-865f-094a519768fb
+   Γ£à First Question: "Compare Quick Sort and Merge Sort. What are their time and space complexities?..."
+
+2. Submitting answer...
+   Γ£à Score: 8/100
+   Γ£à Feedback: This answer needs significant work. Please review the fundamentals of this topic.
+   Γ£à Points Covered: 1
+   Γ£à Points Missed: 4
+
+3. Getting next question...
+   Γ£à Next Question: "Explain the different tree traversal methods with examples...."
+
+4. Ending session...
+   Γ£à Status: completed
+   Γ£à Questions Answered: 1
+   Γ£à Average Score: 8
+
+5. Getting session details...
+   Γ£à Session has 1 events recorded
+
+Γ£à Session flow test completed successfully!

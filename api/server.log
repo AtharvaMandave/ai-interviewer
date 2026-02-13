@@ -1,0 +1,30 @@
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+≡ƒÜÇ AI Interview Coach API
+ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü
+≡ƒôì Server:  http://localhost:3001
+≡ƒôì API:     http://localhost:3001/api
+≡ƒôì Health:  http://localhost:3001/api/health
+ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü
+  
+Γ£à Database connected
+[0mGET /api/health [32m200[0m 28.516 ms - 103[0m
+(node:16628) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[e8d52c15-e31f-4b64-845a-717a2474586e] Error: 
+Invalid `prisma.session.create()` invocation in
+D:\A\api\src\routes\session.routes.js:31:42
+
+  28 }
+  29 
+  30 // Create session
+ΓåÆ 31 const session = await prisma.session.create(
+Foreign key constraint violated on the constraint: `Session_userId_fkey`
+[0mPOST /api/session/start [31m500[0m 2031.070 ms - 1203[0m

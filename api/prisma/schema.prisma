@@ -1,0 +1,230 @@
+// AI Interview Coach - Database Schema
+// PostgreSQL with Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============= USER & AUTH =============
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  passwordHash  String?
+  avatar        String?
+  provider      String   @default("local") // local, google, github
+  providerId    String?
+  role          String   @default("user") // user, admin, premium
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLogin     DateTime?
+
+  sessions      Session[]
+  skillProfiles SkillProfile[]
+  mistakes      MistakePattern[]
+  roadmaps      Roadmap[]
+
+  @@index([email])
+  @@index([provider, providerId])
+}
+
+// ============= QUESTION BANK =============
+
+model Question {
+  id          String   @id @default(uuid())
+  domain      String   // DSA, Java, DBMS, OS, HR, React, C, CPP
+  topic       String   // e.g., "java.hashmap", "dsa.arrays"
+  subTopic    String?
+  difficulty  String   @default("Medium") // Easy, Medium, Hard
+  text        String
+  tags        String[] // ["collections", "hashing"]
+  hints       String[]
+  companyTags String[] // ["Amazon", "Google"]
+  isActive    Boolean  @default(true)
+  isGenerated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rubric        Rubric?
+  sessionEvents SessionEvent[]
+
+  @@index([domain, difficulty])
+  @@index([topic])
+  @@index([isActive])
+}
+
+model Rubric {
+  id          String   @id @default(uuid())
+  questionId  String   @unique
+  mustHave    String[] // Core points (6 pts)
+  goodToHave  String[] // Bonus points (3 pts)
+  redFlags    String[] // Wrong claims penalty
+  idealAnswer String?  // Optional: full ideal answer text
+  keywords    String[] // Key terms for quick matching
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ============= SESSION MANAGEMENT =============
+
+model Session {
+  id             String   @id @default(uuid())
+  userId         String
+  domain         String
+  mode           String   @default("Practice") // Practice, Timed, Company
+  difficulty     String   @default("Medium")
+  companyMode    String?  // TCS, Amazon, etc.
+  status         String   @default("active") // active, completed, abandoned
+  totalScore     Float?
+  questionsAsked Int      @default(0)
+  startTime      DateTime @default(now())
+  endTime        DateTime?
+  timeLimit      Int?     // seconds (for timed mode)
+  metadata       Json?    // Additional settings
+  adaptiveMode   Boolean  @default(false)
+  resumeContext  Json?    // Resume analysis data
+  interviewPlan  Json?    // AI generated interview plan
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events SessionEvent[]
+  report Report?
+
+  @@index([userId, status])
+  @@index([domain])
+  @@index([startTime])
+}
+
+model SessionEvent {
+  id              String   @id @default(uuid())
+  sessionId       String
+  questionId      String
+  questionNumber  Int
+  userAnswer      String   @db.Text
+  score           Float
+  evaluation      Json     // { covered, missing, wrongClaims, confidence }
+  feedback        String?  @db.Text
+  isFollowUp      Boolean  @default(false)
+  followUpDepth   Int      @default(0)
+  parentEventId   String?  // Link to parent question for follow-ups
+  responseTimeMs  Int?
+  createdAt       DateTime @default(now())
+
+  session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@index([sessionId])
+  @@index([questionId])
+}
+
+// ============= SKILL TRACKING =============
+
+model SkillProfile {
+  id             String   @id @default(uuid())
+  userId         String
+  domain         String
+  topic          String
+  masteryScore   Float    @default(0) // 0-100
+  questionsSeen  Int      @default(0)
+  correctAnswers Int      @default(0)
+  avgScore       Float    @default(0)
+  lastSeen       DateTime @default(now())
+  trend          String   @default("stable") // improving, declining, stable
+  streakDays     Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, domain, topic])
+  @@index([userId])
+  @@index([masteryScore])
+}
+
+model MistakePattern {
+  id          String   @id @default(uuid())
+  userId      String
+  patternType String   // "misses_edge_cases", "weak_time_complexity"
+  description String
+  examples    String[] // Question IDs where this pattern appeared
+  frequency   Int      @default(1)
+  severity    String   @default("medium") // low, medium, high
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+  resolved    Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, patternType])
+  @@index([userId])
+  @@index([severity])
+}
+
+// ============= REPORTS & ROADMAPS =============
+
+model Report {
+  id              String   @id @default(uuid())
+  sessionId       String   @unique
+  overallScore    Float
+  topicBreakdown  Json     // { topic: { score, questions, correct } }
+  strengths       String[]
+  weaknesses      String[]
+  recommendations String[]
+  detailedAnalysis Json?   // Detailed question-by-question analysis
+  createdAt       DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Roadmap {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  weeklyPlan  Json     // { week1: { topics: [], goals: [] }, ... }
+  focusTopics String[]
+  resources   Json?    // { topic: [{ title, url, type }] }
+  status      String   @default("active") // active, completed, archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============= VECTOR EMBEDDINGS (for tracking) =============
+
+model Embedding {
+  id         String   @id @default(uuid())
+  entityType String   // question, rubric, answer
+  entityId   String
+  vectorId   String   // ID in vector DB (Pinecone)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([entityType])
+}
+
+// ============= POLICY RULES =============
+
+model PolicyRule {
+  id          String   @id @default("default")
+  name        String   @default("Default Policy")
+  description String?
+  config      Json     // Full policy configuration
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+
+  @@index([isActive])
+}
+

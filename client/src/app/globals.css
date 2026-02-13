@@ -1,0 +1,160 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  /* Clean Pro Dark Palette - Zinc Based */
+  --color-background: #09090b;
+  /* Zinc 950 */
+  --color-foreground: #fafafa;
+  /* Zinc 50 */
+
+  /* UI Components */
+  --color-card: #18181b;
+  /* Zinc 900 */
+  --color-card-foreground: #fafafa;
+
+  --color-popover: #18181b;
+  --color-popover-foreground: #fafafa;
+
+  --color-surface: #18181b;
+  /* Zinc 900 (Alias for card) */
+  --color-surface-hover: #27272a;
+  /* Zinc 800 */
+  --color-surface-active: #3f3f46;
+  /* Zinc 700 */
+
+  --color-primary: #3b82f6;
+  /* Blue 500 */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #27272a;
+  /* Zinc 800 */
+  --color-secondary-foreground: #fafafa;
+
+  --color-muted: #27272a;
+  /* Zinc 800 */
+  --color-muted-foreground: #a1a1aa;
+  /* Zinc 400 */
+
+  --color-accent: #27272a;
+  /* Zinc 800 */
+  --color-accent-foreground: #fafafa;
+
+  --color-destructive: #ef4444;
+  /* Red 500 */
+  --color-destructive-foreground: #fafafa;
+
+  --color-border: #27272a;
+  /* Zinc 800 */
+  --color-input: #27272a;
+  --color-ring: #3b82f6;
+
+  /* Status Colors (Semantic) */
+  --color-success: #10b981;
+  /* Emerald 500 */
+  --color-warning: #f59e0b;
+  /* Amber 500 */
+  --color-danger: #ef4444;
+  /* Red 500 */
+  --color-info: #3b82f6;
+  /* Blue 500 */
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.15);
+
+  /* Radius */
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+/* Base Styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Subtle Texture */
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Base Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+
+/* Clean Input Utility */
+.clean-input {
+  @apply w-full px-3 py-2 bg-background border border-border rounded-md text-sm shadow-sm transition-colors;
+}
+
+.clean-input:focus {
+  @apply outline-none border-primary ring-1 ring-primary;
+}
+
+.clean-input::placeholder {
+  @apply text-muted-foreground;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}

@@ -1,0 +1,20 @@
+[32m[Nest] 15396  - [39m02/08/2026, 6:26:24 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[Nest] 15396  - 02/08/2026, 6:26:24 PM   ERROR [ExceptionHandler] TypeError: Cannot read properties of undefined (reading 'get')
+    at new GroqProvider (D:\A\api\src\modules\llm\providers\/groq.provider.js:10:37)
+    at Injector.instantiateClass (D:\A\api\node_modules\@nestjs\core\injector\injector.js:422:19)
+    at callback (D:\A\api\node_modules\@nestjs\core\injector\injector.js:70:45)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at Injector.resolveConstructorParams (D:\A\api\node_modules\@nestjs\core\injector\injector.js:170:24)
+    at Injector.loadInstance (D:\A\api\node_modules\@nestjs\core\injector\injector.js:75:13)
+    at Injector.loadProvider (D:\A\api\node_modules\@nestjs\core\injector\injector.js:103:9)
+    at D:\A\api\node_modules\@nestjs\core\injector\instance-loader.js:56:13
+    at async Promise.all (index 4)
+    at InstanceLoader.createInstancesOfProviders (D:\A\api\node_modules\@nestjs\core\injector\instance-loader.js:55:9)
+    at D:\A\api\node_modules\@nestjs\core\injector\instance-loader.js:40:13
+    at async Promise.all (index 13)
+    at InstanceLoader.createInstances (D:\A\api\node_modules\@nestjs\core\injector\instance-loader.js:39:9)
+    at InstanceLoader.createInstancesOfDependencies (D:\A\api\node_modules\@nestjs\core\injector\instance-loader.js:22:13)
+    at D:\A\api\node_modules\@nestjs\core\nest-factory.js:112:17
+    at Function.asyncRun (D:\A\api\node_modules\@nestjs\core\errors\exceptions-zone.js:22:13)
+    at NestFactoryStatic.initialize (D:\A\api\node_modules\@nestjs\core\nest-factory.js:110:13)
+    at NestFactoryStatic.create (D:\A\api\node_modules\@nestjs\core\nest-factory.js:43:9)

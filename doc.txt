@@ -1,0 +1,503 @@
+AI Interview Coach Agent (Agentic AI) — Full Production Project Documentation
+Purpose: This document contains the complete end-to-end specification, architecture, workflows, internals, scoring logic, memory system, vector search pipeline, and production-ready tech stack for building a Multi-Agent AI Interview Coach capable of supporting 1000+ concurrent users.
+________________________________________
+0) Executive Summary
+This project is an Agentic AI Interview Simulator that:
+•	Conducts adaptive mock interviews (DSA/Java/DBMS/OS/HR)
+•	Evaluates answers objectively using rubrics + semantic similarity
+•	Generates follow-up questions automatically
+•	Tracks long-term skill mastery
+•	Detects repeated mistake patterns
+•	Produces final reports + personalized study plans
+Unlike typical “interview chatbots”, this system is built as a production-grade agent platform with:
+•	a custom orchestrator loop
+•	Redis session state
+•	queue-based async jobs
+•	scalable vector retrieval
+•	deterministic scoring
+________________________________________
+1) What is Agentic AI (Project Context)
+Normal chatbot
+•	Ask → Answer → Done
+Agentic AI
+•	Ask → Plan → Act → Evaluate → Decide Next → Repeat
+This project is agentic because the system:
+•	selects questions based on user profile
+•	evaluates answers
+•	chooses follow-ups
+•	adapts difficulty
+•	stores memory and uses it later
+________________________________________
+2) Project Goals & Key Features
+2.1 Primary goals
+•	Simulate real interview rounds
+•	Provide objective scoring
+•	Provide actionable feedback
+•	Personalize learning
+2.2 Core features
+•	Multi-domain interview modes:
+o	DSA
+o	Java
+o	CPP
+o	C
+o	React
+o	DBMS
+o	OS
+o	HR
+Similar 
+•	Adaptive difficulty progression
+•	Follow-up question chains
+•	Topic-wise mastery tracking
+•	Session history
+•	Personalized study plan generation
+2.3 Optional advanced features
+•	Company-specific interview modes (TCS/Amazon/Infosys etc.)
+•	Voice interview mode
+•	Timed interview mode
+•	PDF report export
+________________________________________
+3) Differentiation (How This Stands Out)
+Most projects are simple LLM chatbots. This project differentiates via:
+3.1 Multi-agent architecture
+•	Interviewer Agent: question selection + follow-ups
+•	Evaluator Agent: rubric scoring + semantic matching
+•	Analyst Agent: patterns + roadmap generation
+3.2 Hybrid evaluation (Rubric + Embeddings)
+•	rubric-based objective evaluation
+•	semantic similarity (vector matching)
+•	deterministic scoring formula
+3.3 Mistake pattern detection
+Examples:
+•	misses edge cases
+•	shallow explanations
+•	cannot explain time complexity
+•	weak conceptual clarity
+3.4 Production engineering
+•	Redis state management
+•	async queues for heavy tasks
+•	caching of rubrics and retrieval results
+________________________________________
+4) System Architecture (High Level)
+4.1 Components
+•	Frontend: Interview UI + Dashboard
+•	Backend API: session orchestration + scoring
+•	LLM Service: question/rubric/feedback generation
+•	Vector Store: question/rubric/memory retrieval
+•	Database: users, sessions, skill profile, rubrics
+•	Redis: session state + cache
+•	Queue Workers: background processing
+4.2 Data flow (conceptual)
+User → Frontend → API → (Redis/DB/Vector/LLM) → API → Frontend
+________________________________________
+5) Full End-to-End Workflow
+Step 0: User starts
+•	selects domain (Java/DSA/DBMS/OS/HR)
+•	selects mode (Practice/Timed)
+•	selects difficulty
+Step 1: Session initialization
+Backend creates:
+•	sessionId
+•	initial session state in Redis
+•	persistent session record in DB
+Step 2: Interview plan generation
+Planner decides a plan:
+•	warm-up → medium → deep follow-up → tricky
+Step 3: Question selection
+Uses:
+•	skill profile
+•	session memory
+•	vector retrieval
+Step 4: User answers
+Text or voice.
+Step 5: Evaluation
+•	load/generate rubric
+•	extract answer points
+•	semantic matching
+•	compute score
+Step 6: Decision
+•	follow-up OR
+•	harder OR
+•	easier OR
+•	switch topic
+Step 7: Memory update
+•	session memory updated
+•	long-term profile updated
+Step 8: Repeat
+Until end conditions.
+Step 9: Final report
+•	score
+•	topic breakdown
+•	mistakes
+Step 10: Roadmap
+•	daily plan
+Step 11: Dashboard
+•	progress analytics
+________________________________________
+6) Agent Internals (Exact Working)
+6.1 Orchestrator (main controller)
+The orchestrator is the system brain.
+Important: In production, this is not a blocking while(true) loop.
+Instead, it is implemented across API calls using Redis state.
+Core pseudo-logic:
+START_SESSION
+LOAD_USER_PROFILE
+INIT_SESSION_STATE (Redis)
+
+REPEAT PER REQUEST:
+  GET_NEXT_QUESTION
+  WAIT_USER_ANSWER
+  EVALUATE
+  UPDATE_MEMORY
+  DECIDE_NEXT
+
+END_SESSION
+GENERATE_REPORT
+GENERATE_STUDY_PLAN
+6.2 Interviewer Agent
+Responsibilities:
+•	choose topic
+•	choose question
+•	generate follow-up question
+•	adjust difficulty
+Inputs:
+•	skill profile
+•	asked question list
+•	last evaluation
+Outputs:
+•	question object
+6.3 Evaluator Agent
+Responsibilities:
+•	rubric retrieval/generation
+•	point extraction from answer
+•	semantic matching
+•	deterministic scoring
+Outputs:
+•	structured evaluation JSON
+6.4 Analyst Agent
+Responsibilities:
+•	update skill graph
+•	detect mistake patterns
+•	generate roadmap
+________________________________________
+7) Custom Orchestrator Loop (How It Is Built)
+A custom orchestrator is implemented using:
+7.1 Session state in Redis
+Stored as JSON:
+{
+  "sessionId": "abc123",
+  "userId": "u101",
+  "mode": "Java",
+  "difficulty": "Medium",
+  "questionCount": 3,
+  "followUpDepth": 1,
+  "currentTopic": "java.hashmap",
+  "askedQuestionIds": ["q11", "q18", "q21"],
+  "lastEvaluation": {
+    "score": 5.2,
+    "missingCore": ["load factor"]
+  }
+}
+7.2 Deterministic policy engine
+Rules like:
+•	score < 4 → follow-up
+•	score > 7.5 → harder
+•	2 low scores → switch topic
+7.3 Tool-style services
+•	QuestionService
+•	RubricService
+•	EvaluationService
+•	MemoryService
+•	PolicyEngine
+7.4 API-driven state progression
+Instead of looping in code, the frontend calls endpoints repeatedly:
+•	/session/start
+•	/session/next-question
+•	/session/submit-answer
+________________________________________
+8) Answer Evaluation & Scoring System
+8.1 Rubric structure
+Each question has:
+•	mustHave: core points
+•	goodToHave: advanced points
+•	redFlags: wrong statements
+Example:
+{
+  "mustHave": [
+    "hashing",
+    "bucket array",
+    "collision handling",
+    "load factor",
+    "rehashing"
+  ],
+  "goodToHave": [
+    "treeification in Java 8",
+    "equals/hashCode contract",
+    "time complexity"
+  ],
+  "redFlags": [
+    "HashMap maintains insertion order",
+    "Collision always overwrites value"
+  ]
+}
+8.2 Extracting points from user answer
+LLM converts answer to JSON:
+{
+  "covered": ["hashing", "bucket array", "collision handling"],
+  "missing": ["load factor", "rehashing"],
+  "wrongClaims": ["HashMap always uses linked list"],
+  "confidence": 0.82
+}
+8.3 Deterministic scoring formula (10-point)
+•	Must-have contributes 6 points
+•	Good-to-have contributes 3 points
+•	Wrong claims penalty subtracts points
+mustScore  = (coveredMust / totalMust) * 6
+bonusScore = (coveredGood / totalGood) * 3
+penalty    = wrongClaimsCount * 1.5
+
+finalScore = mustScore + bonusScore - penalty
+finalScore = clamp(finalScore, 0, 10)
+8.4 Optional: Communication scoring
+Add up to +2 points for:
+•	clarity
+•	structure
+•	examples
+________________________________________
+9) Rubric Creation (How Expected Answer Is Built)
+9.1 What “expected answer” means
+Expected answer is NOT a paragraph.
+It is primarily a structured rubric:
+•	mustHave
+•	goodToHave
+•	redFlags
+9.2 Rubric creation methods
+Method A — Prebuilt rubric bank
+•	stable and reliable
+Method B — LLM generated rubric
+•	scalable
+Method C — Hybrid (recommended)
+1.	Check DB for rubric
+2.	If missing → LLM generates rubric JSON
+3.	Validate format
+4.	Store in DB
+9.3 Validation rules
+•	mustHave: 3–8
+•	goodToHave: 0–6
+•	redFlags: 0–8
+•	short phrases
+•	no duplicates
+________________________________________
+10) Token, Chunking, Embedding, Vector Search
+10.1 Where chunking is used
+Chunking applies to:
+•	notes/knowledge base
+•	ideal answers
+•	feedback logs
+Recommended:
+•	300–600 tokens
+•	50–100 overlap
+10.2 What gets embedded
+•	questions
+•	rubric points
+•	user answers (optional)
+•	memory items
+10.3 Vector collections
+•	question_vectors
+•	rubric_vectors
+•	memory_vectors
+10.4 Retrieval use cases
+•	pick best next question
+•	semantic rubric matching
+•	recall past mistakes
+10.5 Token control
+•	cache rubrics
+•	reuse embeddings
+•	do not send long history
+•	use RAG chunks only
+________________________________________
+11) Decision Engine (Next Step Logic)
+Rules (examples):
+Follow-up
+•	if missing core points OR wrong claims → follow-up
+Increase difficulty
+•	if score > 7.5 → harder
+Switch topic
+•	if score < 3 twice → switch
+End
+•	time limit OR question limit reached
+________________________________________
+12) Production Tech Stack (1000+ Concurrent Users)
+This is the recommended production stack.
+12.1 Frontend
+•	Next.js (App Router)
+•	React
+•	TypeScript
+•	Tailwind
+•	shadcn/ui
+•	Recharts
+Hosting:
+•	Vercel (CDN + autoscaling)
+12.2 Backend
+Recommended:
+•	Node.js + NestJS
+Why:
+•	scalable architecture
+•	clean modules
+•	production patterns
+12.3 Database
+•	PostgreSQL (AWS RDS / Neon / Supabase)
+Stores:
+•	users
+•	sessions
+•	interview events
+•	skill profile
+12.4 Redis
+•	session state store
+•	caching
+•	rate limiting counters
+12.5 Queue system
+•	BullMQ + Redis
+Async jobs:
+•	report generation
+•	roadmap generation
+•	embeddings
+•	rubric generation
+12.6 Vector DB
+•	Pinecone (best managed)
+•	Qdrant / Weaviate (alternatives)
+12.7 LLM provider
+•	Groq (fast)
+•	google gemini (fallback)
+12.8 Auth & Security
+>OAuth
+•	JWT + refresh tokens
+•	Helmet
+•	CORS
+•	rate limiting
+12.9 Monitoring
+•	Sentry
+•	Prometheus + Grafana
+•	Pino/Winston logs
+12.10 Deployment
+•	Docker
+•	AWS ECS / Cloud Run
+•	Nginx / Cloudflare as gateway
+________________________________________
+13) Scaling Strategy (How 1000+ Users Are Handled)
+13.1 Key idea
+Do NOT do everything in one API call.
+13.2 Real-time API must be lightweight
+•	submit answer
+•	get evaluation
+•	get next question
+13.3 Heavy work goes to background queue
+•	pattern analysis
+•	report generation
+•	roadmap
+•	embedding generation
+13.4 Redis prevents DB overload
+•	session state stays in Redis
+•	DB stores final session logs
+13.5 Caching
+Cache:
+•	rubrics
+•	common question vectors
+•	topic stats
+________________________________________
+14) Database & Storage Model
+14.1 PostgreSQL tables
+•	users
+•	sessions
+•	session_events
+•	skill_profile
+•	mistake_patterns
+•	rubrics
+14.2 Vector DB indexes
+•	question vectors
+•	rubric vectors
+•	memory vectors
+14.3 Redis keys
+•	session:{sessionId}
+•	rate:{userId}
+•	cache:rubric:{questionId}
+________________________________________
+15) API Design (Clean Production Endpoints)
+POST /session/start
+•	creates session
+•	writes Redis state
+POST /session/next-question
+•	returns next question
+POST /session/submit-answer
+•	evaluates answer
+•	updates state
+•	returns feedback + next action
+POST /session/end
+•	finalizes session
+•	triggers report job
+GET /dashboard/summary
+•	returns analytics
+________________________________________
+16) Folder Structure (Production-Ready)
+Example (NextJS):
+src/
+  modules/
+    session/
+      session.controller.js
+      session.service.js
+      session.state.js
+
+    agent/
+      orchestrator.service.js
+      interviewer.service.js
+      evaluator.service.js
+      analyst.service.js
+      policy.engine.js
+
+    memory/
+      redis.service.js
+      vector.service.js
+
+    llm/
+      llm.service.js
+
+    rubric/
+      rubric.service.js
+
+    question-bank/
+      question.service.js
+
+  workers/
+    report.worker.js
+    embedding.worker.js
+    roadmap.worker.js
+________________________________________
+17) Resume Title + Bullet Points
+Title
+Multi-Agent Interview Simulator with Rubric-Based Semantic Scoring, Long-Term Memory, and Personalized Roadmaps
+Bullet points
+•	Built an Agentic AI Interview Coach that conducts adaptive mock interviews across DSA, Java, DBMS, OS, and HR.
+•	Designed a custom orchestrator loop using Redis session state and deterministic policy rules to manage interview flow and follow-up chains.
+•	Implemented rubric-based semantic answer evaluation using embeddings + vector similarity for objective scoring independent of exact wording.
+•	Developed production-ready analytics to track topic mastery, repeated mistake patterns, and improvement trends across sessions.
+________________________________________
+18) Final One-Line Explanation (For Viva/Interview)
+The system runs an agent loop: it selects a question using skill memory, evaluates the answer using rubric + embeddings, decides follow-ups via policy rules, updates long-term mastery, and generates a personalized study roadmap.
+________________________________________
+19) Recommended Build Order
+1.	Question bank + session flow
+2.	Session state in Redis
+3.	Rubric storage + deterministic scoring
+4.	Orchestrator + policy engine
+5.	Skill profile + dashboard
+6.	Vector retrieval integration
+7.	Async workers (reports/roadmap)
+8.	Company modes + voice mode (optional)
+________________________________________
+20) Deliverables (What You Should Put on GitHub)
+•	README with architecture diagram
+•	API docs
+•	sample rubrics + question bank
+•	screenshots of dashboard
+•	deployment guide
+•	demo video
+ 
