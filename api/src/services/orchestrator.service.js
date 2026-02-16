@@ -14,6 +14,7 @@ const { prisma } = require('../db/prisma');
 const { policyEngine } = require('./policy-engine.service');
 const { hybridEvaluationService } = require('./hybrid-evaluation.service');
 const { interviewerService } = require('./interviewer.service');
+const { describeDrawing } = require('../utils/diagramDescriber');
 
 class OrchestratorService {
 
@@ -31,6 +32,9 @@ class OrchestratorService {
             companyMode = null,
             timeLimit = null,
             questionLimit = null,
+            adaptiveMode = false,
+            roleConfig = null,
+            topic = null,
         } = options;
 
         // Validate required fields
@@ -73,11 +77,16 @@ class OrchestratorService {
                 difficulty,
                 companyMode,
                 status: 'active',
+                adaptiveMode,
                 timeLimit: maxDuration * 60, // Convert to seconds
+                resumeContext: options.resumeContext || undefined,
+                interviewPlan: options.interviewPlan || undefined,
                 metadata: {
                     maxQuestions,
                     startDifficulty: difficulty,
                     policyVersion: 'v1',
+                    roleConfig: roleConfig || null,
+                    topic: topic || null,
                 },
             },
         });
@@ -88,15 +97,35 @@ class OrchestratorService {
             userId,
             domain,
             difficulty,
+            topic,
         });
 
         // Get first question
-        const firstQuestion = await interviewerService.selectQuestion({
-            domain,
-            difficulty,
-            excludeIds: [],
-            userId,
-        });
+        let firstQuestion;
+
+        if (mode === "Resume") {
+            firstQuestion = await interviewerService.generateResumeQuestion({
+                domain,
+                difficulty,
+                userId,
+                resumeContext: options.resumeContext || null,
+                planStage: options.interviewPlan?.stages?.[0] || null,
+                askedQuestionIds: [],
+                askedTopics: [],
+                previousQuestion: null,
+                previousScore: null,
+            });
+        } else {
+            firstQuestion = await interviewerService.selectQuestion({
+                domain,
+                difficulty,
+                excludeIds: [],
+                userId,
+                companyTags: companyMode ? [companyMode] : null,
+                topic: topic || null,
+            });
+        }
+
 
         if (!firstQuestion) {
             throw new Error(`No questions available for domain: ${domain}`);
@@ -131,7 +160,8 @@ class OrchestratorService {
             userId: options.userId,
             domain: options.domain,
             currentDifficulty: options.difficulty || 'Medium',
-            currentTopic: null,
+            currentTopic: options.topic || null,
+            fixedTopic: options.topic || null,
             currentQuestion: null,
             questionNumber: 0,
             askedQuestionIds: [],
@@ -144,6 +174,8 @@ class OrchestratorService {
             totalScore: 0,
             maxQuestions: options.maxQuestions || 20,
             isEnded: false,
+            companyMode: session.companyMode || null,
+            adaptiveMode: session.adaptiveMode || false,
         };
     }
 
@@ -253,11 +285,30 @@ class OrchestratorService {
 
                 if (!question) {
                     // Fallback to any question
-                    question = await interviewerService.selectQuestion({
-                        domain: state.domain,
-                        excludeIds: state.askedQuestionIds,
-                        userId: state.userId,
-                    });
+                    if (session.mode === "Resume") {
+                        question = await interviewerService.generateResumeQuestion({
+                            domain: state.domain,
+                            difficulty: state.currentDifficulty,
+                            userId: state.userId,
+                            resumeContext: session.resumeContext || session.metadata?.resumeContext || null,
+                            planStage: session.interviewPlan?.stages?.[state.questionNumber]
+                                || session.metadata?.interviewPlan?.stages?.[state.questionNumber]
+                                || session.interviewPlan?.stages?.[session.interviewPlan?.stages?.length - 1]
+                                || null,
+                            askedQuestionIds: state.askedQuestionIds,
+                            askedTopics: state.askedTopics,
+                            previousQuestion: state.currentQuestion,
+                            previousScore: state.recentScores?.[0]?.score || null,
+                            policyDecision,
+                        });
+                    } else {
+                        question = await interviewerService.selectQuestionByPolicy(
+                            state.domain,
+                            policyDecision,
+                            state
+                        );
+                    }
+
                 }
 
                 // Reset follow-up state
@@ -329,6 +380,9 @@ class OrchestratorService {
             totalScore: events.reduce((sum, e) => sum + e.score, 0),
             maxQuestions: session.metadata?.maxQuestions || 20,
             isEnded: session.status !== 'active',
+            companyMode: session.companyMode || null,
+            adaptiveMode: session.adaptiveMode || false,
+            fixedTopic: session.metadata?.topic || null,
         };
     }
 
@@ -342,6 +396,7 @@ class OrchestratorService {
             questionId,
             answer,
             responseTimeMs,
+            drawingData = null,
             currentState = null,
         } = options;
 
@@ -372,12 +427,28 @@ class OrchestratorService {
 
         const state = currentState || this.reconstructState(sessionWithEvents);
 
-        // Run hybrid evaluation
-        const evaluation = await hybridEvaluationService.evaluate(questionId, answer, {
+        // If there's drawing data, parse it into text and append to the answer
+        let enrichedAnswer = answer;
+        if (drawingData) {
+            try {
+                const diagramDescription = describeDrawing(drawingData);
+                if (diagramDescription) {
+                    enrichedAnswer = answer + diagramDescription;
+                    console.log('[Orchestrator] Appended diagram description to answer');
+                }
+            } catch (error) {
+                console.error('[Orchestrator] Failed to describe drawing:', error);
+                // Continue without diagram description
+            }
+        }
+
+        // Run hybrid evaluation with the enriched answer
+        const evaluation = await hybridEvaluationService.evaluate(questionId, enrichedAnswer, {
             sessionId,
             userId: session.userId,
             responseTimeMs,
             questionNumber: state.questionNumber,
+            drawingData,
             sessionState: {
                 recentScores: state.recentScores,
                 currentTopic: state.currentTopic,

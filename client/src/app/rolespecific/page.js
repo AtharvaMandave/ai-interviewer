@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/Button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
+import AnswerEditor from "@/components/ui/AnswerEditor"
 
 const PHASES = {
     SETUP: 'setup',
@@ -97,6 +98,7 @@ export default function RoleSpecificPage() {
     // Question state
     const [currentQuestion, setCurrentQuestion] = useState(null)
     const [answer, setAnswer] = useState('')
+    const [drawingData, setDrawingData] = useState(null)
     const [startTime, setStartTime] = useState(null)
     const [hint, setHint] = useState(null)
     const [hintCount, setHintCount] = useState(0)
@@ -165,7 +167,12 @@ export default function RoleSpecificPage() {
                 domain,
                 difficulty: selectedDifficulty,
                 questionLimit,
-                mode: 'Practice',
+                mode: 'Role',
+                roleConfig: {
+                    role: selectedRole?.title,
+                    experienceLevel: selectedExperience,
+                    domains: selectedRole?.domains || [],
+                },
             })
 
             setSessionId(response.data.session.id)
@@ -192,6 +199,7 @@ export default function RoleSpecificPage() {
                 questionId: currentQuestion.id,
                 answer: answer.trim(),
                 responseTimeMs,
+                drawingData,
             })
             setEvaluation(response.data.evaluation)
             setFeedback(response.data.feedback)
@@ -464,14 +472,14 @@ export default function RoleSpecificPage() {
 
                         <Card>
                             <CardContent className="pt-6">
-                                <label className="block text-sm font-medium text-foreground mb-4">Your Answer</label>
-                                <textarea
-                                    ref={textareaRef}
+                                <AnswerEditor
                                     value={answer}
-                                    onChange={(e) => setAnswer(e.target.value)}
+                                    onChange={setAnswer}
+                                    onDrawingChange={setDrawingData}
+                                    disabled={isLoading}
                                     placeholder="Type your answer here... Be thorough and explain your reasoning."
-                                    className="clean-input w-full h-64 font-mono text-sm leading-relaxed resize-none"
                                 />
+
                                 <div className="flex items-center justify-between mt-6">
                                     <Button
                                         variant="ghost"

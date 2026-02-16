@@ -78,7 +78,7 @@ model Session {
   id             String   @id @default(uuid())
   userId         String
   domain         String
-  mode           String   @default("Practice") // Practice, Timed, Company
+  mode           String   @default("Practice") // Practice, Timed, Company, Topic, Role, Resume
   difficulty     String   @default("Medium")
   companyMode    String?  // TCS, Amazon, etc.
   status         String   @default("active") // active, completed, abandoned
@@ -114,6 +114,7 @@ model SessionEvent {
   followUpDepth   Int      @default(0)
   parentEventId   String?  // Link to parent question for follow-ups
   responseTimeMs  Int?
+  drawingData     Json?    // tldraw whiteboard snapshot JSON
   createdAt       DateTime @default(now())
 
   session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)

@@ -19,6 +19,15 @@ class EvaluationService {
     /**
      * Generate a rubric for a question using LLM
      */
+    sanitizeIndexArray(arr, maxLen) {
+    if (!Array.isArray(arr)) return [];
+    return [...new Set(
+        arr
+            .map(x => Number(x))
+            .filter(x => Number.isInteger(x) && x >= 0 && x < maxLen)
+    )];
+}
+
     async generateRubric(question) {
         const { systemPrompt, prompt } = generateRubricPrompt(question);
 
@@ -65,7 +74,7 @@ class EvaluationService {
         // - Base: (covered must-have / total must-have) * 80
         // - Bonus: good-to-have adds up to 20 points
         // - Penalty: each red flag -5 points
-        let score = mustHaveCount > 0 ? (coveredMustHave / mustHaveCount) * 80 : 0;
+        let score = mustHaveCount > 0 ? (coveredMustHave / mustHaveCount) * 80 : 60;
         score += Math.min(coveredGoodToHave * 5, 20); // Max 20 bonus
         score -= redFlagsTriggered * 5; // -5 per red flag
         score = Math.max(0, Math.min(100, Math.round(score)));
@@ -131,7 +140,7 @@ class EvaluationService {
             question: followUp.followUpQuestion || 'Can you elaborate more?',
             intent: followUp.intent || 'Probe deeper understanding',
             expectedTopics: followUp.expectedTopics || [],
-            difficulty: followUp.difficulty || question.difficulty,
+            difficulty: followUp.difficulty || "medium",
         };
     }
 

@@ -65,14 +65,30 @@ class HybridEvaluationService {
     // ============= STEP 2: NORMALIZE RUBRIC POINTS =============
 
     /**
+     * Ensure rubric field is an array. Handles legacy data stored as strings.
+     */
+    ensureArray(value) {
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string' && value.trim()) {
+            // Split on newlines, semicolons, or numbered list patterns
+            const parts = value.split(/[\n;]|\d+\.\s/)
+                .map(s => s.trim())
+                .filter(s => s.length > 3);
+            return parts.length > 0 ? parts : [value.trim()];
+        }
+        return [];
+    }
+
+    /**
      * Normalize rubric into structured points with IDs and tags
      */
     normalizeRubricPoints(rubric) {
         const points = [];
         let idCounter = 0;
 
-        // Must-have points
-        (rubric.mustHave || []).forEach((text, index) => {
+        // Must-have points (safely handle string or array)
+        const mustHave = this.ensureArray(rubric.mustHave);
+        mustHave.forEach((text, index) => {
             points.push({
                 id: `must_${idCounter++}`,
                 type: 'mustHave',
@@ -84,7 +100,8 @@ class HybridEvaluationService {
         });
 
         // Good-to-have points
-        (rubric.goodToHave || []).forEach((text, index) => {
+        const goodToHave = this.ensureArray(rubric.goodToHave);
+        goodToHave.forEach((text, index) => {
             points.push({
                 id: `good_${idCounter++}`,
                 type: 'goodToHave',
@@ -96,7 +113,8 @@ class HybridEvaluationService {
         });
 
         // Red flags
-        (rubric.redFlags || []).forEach((text, index) => {
+        const redFlags = this.ensureArray(rubric.redFlags);
+        redFlags.forEach((text, index) => {
             points.push({
                 id: `flag_${idCounter++}`,
                 type: 'redFlag',
@@ -193,9 +211,17 @@ Respond with JSON only:
     // ============= STEP 4: SEMANTIC MATCHING USING EMBEDDINGS =============
 
     /**
-     * Match extracted claims to rubric points using embeddings
+     * Match extracted claims to rubric points using embeddings or LLM fallback
      */
     async semanticMatch(claims, rubricPoints) {
+        const hasEmbeddingAPI = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+
+        // Use LLM-based matching when no embedding API is available (more accurate)
+        if (!hasEmbeddingAPI) {
+            return this.llmBasedMatch(claims, rubricPoints);
+        }
+
+        // Embedding-based matching (original approach)
         const matchResults = {
             mustHave: { covered: [], partial: [], missing: [] },
             goodToHave: { covered: [], partial: [], missing: [] },
@@ -203,10 +229,8 @@ Respond with JSON only:
             detailedMatches: [],
         };
 
-        // Get embeddings for all claims combined (one embedding for full answer context)
         const claimsText = claims.join('. ');
 
-        // Match each rubric point against the combined claims
         for (const point of rubricPoints) {
             const matches = await embeddingsService.matchClaimToRubric(claimsText, [point]);
             const bestMatch = matches[0];
@@ -219,7 +243,6 @@ Respond with JSON only:
                 coverage: bestMatch.coverage,
             });
 
-            // Classify based on point type
             if (point.type === 'mustHave') {
                 if (bestMatch.coverage === 'covered') {
                     matchResults.mustHave.covered.push(point);
@@ -243,20 +266,169 @@ Respond with JSON only:
     }
 
     /**
-     * Check if answer triggers any red flags
+     * LLM-based matching using Groq/Gemini
+     * Asks the LLM to directly classify which rubric points are covered
+     * More accurate than embedding fallbacks when no embedding API is available
+     */
+    async llmBasedMatch(claims, rubricPoints) {
+        const matchResults = {
+            mustHave: { covered: [], partial: [], missing: [] },
+            goodToHave: { covered: [], partial: [], missing: [] },
+            redFlags: { triggered: [] },
+            detailedMatches: [],
+        };
+
+        const mustHavePoints = rubricPoints.filter(p => p.type === 'mustHave');
+        const goodToHavePoints = rubricPoints.filter(p => p.type === 'goodToHave');
+
+        const prompt = `You are evaluating an interview answer. Classify which rubric points are covered by the user's claims.
+
+USER'S CLAIMS (extracted from their answer):
+${claims.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+MUST-HAVE RUBRIC POINTS:
+${mustHavePoints.map((p, i) => `M${i}: ${p.text}`).join('\n')}
+
+GOOD-TO-HAVE RUBRIC POINTS:
+${goodToHavePoints.map((p, i) => `G${i}: ${p.text}`).join('\n')}
+
+For each rubric point, classify as:
+- "covered" = the claims clearly address this point
+- "partial" = the claims touch on this but don't fully cover it  
+- "missing" = the claims don't address this point at all
+
+Respond with JSON only:
+{
+  "mustHave": { "M0": "covered|partial|missing", "M1": "covered|partial|missing", ... },
+  "goodToHave": { "G0": "covered|partial|missing", "G1": "covered|partial|missing", ... }
+}`;
+
+        try {
+            const result = await llmService.generateJSON(prompt, {
+                temperature: 0.1,
+                maxTokens: 500,
+            });
+
+            // Process must-have points
+            mustHavePoints.forEach((point, i) => {
+                const key = `M${i}`;
+                const coverage = result.mustHave?.[key] || 'missing';
+                const sim = coverage === 'covered' ? 0.9 : coverage === 'partial' ? 0.75 : 0.3;
+
+                matchResults.detailedMatches.push({
+                    pointId: point.id,
+                    pointText: point.text,
+                    pointType: point.type,
+                    similarity: sim,
+                    coverage,
+                });
+
+                if (coverage === 'covered') matchResults.mustHave.covered.push(point);
+                else if (coverage === 'partial') matchResults.mustHave.partial.push(point);
+                else matchResults.mustHave.missing.push(point);
+            });
+
+            // Process good-to-have points
+            goodToHavePoints.forEach((point, i) => {
+                const key = `G${i}`;
+                const coverage = result.goodToHave?.[key] || 'missing';
+                const sim = coverage === 'covered' ? 0.9 : coverage === 'partial' ? 0.75 : 0.3;
+
+                matchResults.detailedMatches.push({
+                    pointId: point.id,
+                    pointText: point.text,
+                    pointType: point.type,
+                    similarity: sim,
+                    coverage,
+                });
+
+                if (coverage === 'covered') matchResults.goodToHave.covered.push(point);
+                else if (coverage === 'partial') matchResults.goodToHave.partial.push(point);
+                else matchResults.goodToHave.missing.push(point);
+            });
+
+        } catch (error) {
+            console.error('[HybridEval] LLM matching failed, using keyword fallback:', error.message);
+            // Fall back to keyword-based matching via embeddings service
+            return this.keywordFallbackMatch(claims, rubricPoints);
+        }
+
+        return matchResults;
+    }
+
+    /**
+     * Keyword-based matching fallback (last resort)
+     */
+    keywordFallbackMatch(claims, rubricPoints) {
+        const matchResults = {
+            mustHave: { covered: [], partial: [], missing: [] },
+            goodToHave: { covered: [], partial: [], missing: [] },
+            redFlags: { triggered: [] },
+            detailedMatches: [],
+        };
+
+        const claimsText = claims.join('. ');
+
+        for (const point of rubricPoints) {
+            const matches = embeddingsService.keywordMatchClaimToRubric(claimsText, [point]);
+            const bestMatch = matches[0];
+
+            matchResults.detailedMatches.push({
+                pointId: point.id,
+                pointText: point.text,
+                pointType: point.type,
+                similarity: bestMatch.similarity,
+                coverage: bestMatch.coverage,
+            });
+
+            if (point.type === 'mustHave') {
+                if (bestMatch.coverage === 'covered') matchResults.mustHave.covered.push(point);
+                else if (bestMatch.coverage === 'partial') matchResults.mustHave.partial.push(point);
+                else matchResults.mustHave.missing.push(point);
+            } else if (point.type === 'goodToHave') {
+                if (bestMatch.coverage === 'covered') matchResults.goodToHave.covered.push(point);
+                else if (bestMatch.coverage === 'partial') matchResults.goodToHave.partial.push(point);
+                else matchResults.goodToHave.missing.push(point);
+            }
+        }
+
+        return matchResults;
+    }
+
+    /**
+     * Check if answer triggers any red flags using LLM or keyword matching
      */
     async checkRedFlags(wrongClaims, rubricPoints) {
         const redFlagPoints = rubricPoints.filter(p => p.type === 'redFlag');
         const triggered = [];
 
+        if (wrongClaims.length === 0 || redFlagPoints.length === 0) {
+            return triggered;
+        }
+
+        const hasEmbeddingAPI = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+
         for (const wrongClaim of wrongClaims) {
             for (const redFlag of redFlagPoints) {
-                const matches = await embeddingsService.matchClaimToRubric(wrongClaim, [redFlag]);
-                if (matches[0].similarity >= THRESHOLDS.PARTIAL) {
+                let isMatch = false;
+                let similarity = 0;
+
+                if (hasEmbeddingAPI) {
+                    const matches = await embeddingsService.matchClaimToRubric(wrongClaim, [redFlag]);
+                    similarity = matches[0].similarity;
+                    isMatch = similarity >= THRESHOLDS.PARTIAL;
+                } else {
+                    // Keyword-based red flag check
+                    const matches = embeddingsService.keywordMatchClaimToRubric(wrongClaim, [redFlag]);
+                    similarity = matches[0].similarity;
+                    isMatch = matches[0].coverage === 'covered' || matches[0].coverage === 'partial';
+                }
+
+                if (isMatch) {
                     triggered.push({
                         redFlag: redFlag.text,
                         matchedClaim: wrongClaim,
-                        similarity: matches[0].similarity,
+                        similarity,
                     });
                 }
             }
@@ -445,6 +617,7 @@ Respond with JSON:
                     detailedMatches: evaluationData.detailedMatches,
                 },
                 responseTimeMs: evaluationData.responseTimeMs,
+                drawingData: evaluationData.drawingData || undefined,
             },
         });
 
@@ -478,7 +651,7 @@ Respond with JSON:
      * Execute the complete hybrid evaluation pipeline
      */
     async evaluate(questionId, userAnswer, options = {}) {
-        const { sessionId, userId, responseTimeMs, questionNumber } = options;
+        const { sessionId, userId, responseTimeMs, questionNumber, drawingData } = options;
 
         // Step 1: Fetch rubric
         const { question, rubric } = await this.fetchRubric(questionId);
@@ -518,6 +691,7 @@ Respond with JSON:
                 detailedMatches: matchResults.detailedMatches,
                 responseTimeMs,
                 questionNumber,
+                drawingData,
             });
         }
 

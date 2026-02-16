@@ -349,6 +349,11 @@ router.post('/start', asyncHandler(async (req, res) => {
         companyMode,
         timeLimit,
         questionLimit,
+        resumeContext,
+        interviewPlan,
+        roleConfig,
+        adaptiveMode,
+        topic
     } = req.body;
 
     if (!userId || !domain) {
@@ -363,6 +368,11 @@ router.post('/start', asyncHandler(async (req, res) => {
         companyMode,
         timeLimit,
         questionLimit,
+        resumeContext,
+        interviewPlan,
+        roleConfig,
+        adaptiveMode,
+        topic
     });
 
     res.json({
@@ -438,11 +448,11 @@ router.get('/:sessionId/question', asyncHandler(async (req, res) => {
  * POST /api/interview/:sessionId/answer
  * Submit an answer and get evaluation
  * 
- * Body: { questionId, answer, responseTimeMs? }
+ * Body: { questionId, answer, responseTimeMs?, drawingData? }
  */
 router.post('/:sessionId/answer', asyncHandler(async (req, res) => {
     const { sessionId } = req.params;
-    const { questionId, answer, responseTimeMs } = req.body;
+    const { questionId, answer, responseTimeMs, drawingData } = req.body;
 
     if (!questionId || !answer) {
         throw new ApiError('questionId and answer are required', 400);
@@ -452,6 +462,7 @@ router.post('/:sessionId/answer', asyncHandler(async (req, res) => {
         questionId,
         answer,
         responseTimeMs,
+        drawingData,
     });
 
     res.json({

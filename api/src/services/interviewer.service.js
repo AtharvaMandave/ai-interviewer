@@ -180,15 +180,16 @@ class InterviewerService {
      * Select question matching policy engine decision
      */
     async selectQuestionByPolicy(domain, policyDecision, sessionState = {}) {
-        const { askedQuestionIds = [], currentTopic, currentDifficulty } = sessionState;
+        const { askedQuestionIds = [], currentTopic, currentDifficulty, fixedTopic } = sessionState;
 
-        let topic = currentTopic;
+        let topic = fixedTopic || currentTopic;
         let difficulty = currentDifficulty || 'Medium';
 
         // Apply policy decision
         const action = policyDecision.action;
 
-        if (action === 'switch_topic') {
+        if (action === 'switch_topic' && !fixedTopic) {
+            // Only switch topics if there's no fixed topic (Topic Wise mode locks the topic)
             topic = await this.selectTopic(sessionState.userId, domain, sessionState);
             difficulty = policyDecision.suggestedDifficulty || 'Easy';
         } else if (action === 'increase_difficulty') {
@@ -203,6 +204,7 @@ class InterviewerService {
             difficulty,
             excludeIds: askedQuestionIds,
             userId: sessionState.userId,
+            companyTags: sessionState.companyMode ? [sessionState.companyMode] : null,
         });
     }
 
@@ -351,6 +353,81 @@ Respond with JSON:
                 hintNumber: attemptNumber,
                 source: 'fallback',
             };
+        }
+    }
+    /**
+     * Generate a question based on resume context
+     */
+    async generateResumeQuestion(context) {
+        const {
+            domain,
+            difficulty,
+            userId,
+            resumeContext,
+            planStage,
+            askedQuestionIds = [],
+            askedTopics = [],
+            previousQuestion,
+            previousScore,
+        } = context;
+
+        // Use LLM to generate a question tailored to the resume
+        try {
+            // Determine topic focus
+            let currentTopic = domain;
+            if (planStage && planStage.focus) {
+                currentTopic = planStage.focus;
+            } else if (resumeContext?.skills && resumeContext.skills.length > 0) {
+                // Pick a random skill from resume
+                const randomIndex = Math.floor(Math.random() * Math.min(5, resumeContext.skills.length));
+                currentTopic = resumeContext.skills[randomIndex];
+            }
+
+            const questionData = await llmService.generateNextQuestion({
+                domain,
+                currentDifficulty: difficulty,
+                currentTopic,
+                resumeContext,
+                planStage: planStage ? `${planStage.type}: ${planStage.focus}` : null,
+                previousQuestion: previousQuestion?.text,
+                previousScore
+            });
+
+            // Save question to database so it can be referenced by ID
+            const newQuestion = await prisma.question.create({
+                data: {
+                    text: questionData.text,
+                    domain: questionData.domain || domain,
+                    topic: questionData.topic || currentTopic,
+                    subTopic: questionData.subTopic,
+                    difficulty: questionData.difficulty || difficulty,
+                    tags: questionData.tags || [],
+                    hints: questionData.hints || [],
+                    isGenerated: true,
+                    rubric: {
+                        create: {
+                            mustHave: questionData.rubric?.mustHave || [],
+                            goodToHave: questionData.rubric?.goodToHave || [],
+                            redFlags: questionData.rubric?.redFlags || [],
+                            keywords: []
+                        }
+                    }
+                },
+                include: {
+                    rubric: true
+                }
+            });
+
+            return newQuestion;
+        } catch (error) {
+            console.error('[Interviewer] Failed to generate resume question:', error);
+            // Fallback to selecting a question from DB if generation fails
+            return this.selectQuestion({
+                domain,
+                difficulty,
+                userId,
+                excludeIds: askedQuestionIds
+            });
         }
     }
 }
