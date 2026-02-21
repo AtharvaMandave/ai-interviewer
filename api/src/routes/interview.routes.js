@@ -562,4 +562,50 @@ router.post('/:sessionId/follow-up', asyncHandler(async (req, res) => {
     });
 }));
 
+/**
+ * POST /api/interview/:sessionId/clarify
+ * Ask a doubt about the current question mid-interview
+ */
+router.post('/:sessionId/clarify', asyncHandler(async (req, res) => {
+    const { sessionId } = req.params;
+    const { doubt } = req.body;
+
+    if (!doubt || !doubt.trim()) {
+        throw new ApiError('Doubt text is required', 400);
+    }
+
+    // Get session with latest question
+    const session = await require('../db/prisma').prisma.session.findUnique({
+        where: { id: sessionId },
+        include: {
+            events: {
+                include: { question: true },
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+            },
+        },
+    });
+
+    if (!session) {
+        throw new ApiError('Session not found', 404);
+    }
+
+    // Get the current question (from last event, or we need the question from session state)
+    let currentQuestion = session.events[0]?.question;
+
+    if (!currentQuestion) {
+        throw new ApiError('No active question found', 400);
+    }
+
+    const clarification = await interviewerService.generateClarification({
+        question: currentQuestion,
+        doubt: doubt.trim(),
+    });
+
+    res.json({
+        success: true,
+        data: clarification,
+    });
+}));
+
 module.exports = router;

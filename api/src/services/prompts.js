@@ -10,17 +10,17 @@
 // ============= SYSTEM PROMPTS =============
 
 const SYSTEM_PROMPTS = {
-    evaluator: `You are an expert technical interviewer evaluating candidate responses. 
+  evaluator: `You are an expert technical interviewer evaluating candidate responses. 
 You are fair, thorough, and provide constructive feedback.
 You identify both strengths and areas for improvement.
 You focus on technical accuracy, completeness, and clarity of explanation.`,
 
-    interviewer: `You are an experienced technical interviewer conducting a practice interview.
+  interviewer: `You are an experienced technical interviewer conducting a practice interview.
 You ask relevant follow-up questions based on the candidate's responses.
 Your questions probe deeper understanding and identify knowledge gaps.
 You are encouraging but rigorous in assessing technical depth.`,
 
-    rubricGenerator: `You are a curriculum expert creating evaluation rubrics for technical interview questions.
+  rubricGenerator: `You are a curriculum expert creating evaluation rubrics for technical interview questions.
 You create comprehensive, fair, and measurable evaluation criteria.
 Your rubrics help assess both breadth and depth of understanding.`,
 };
@@ -31,9 +31,9 @@ Your rubrics help assess both breadth and depth of understanding.`,
  * Generate prompt for rubric generation
  */
 function generateRubricPrompt(question) {
-    return {
-        systemPrompt: SYSTEM_PROMPTS.rubricGenerator,
-        prompt: `Create an evaluation rubric for this ${question.domain} interview question:
+  return {
+    systemPrompt: SYSTEM_PROMPTS.rubricGenerator,
+    prompt: `Create an evaluation rubric for this ${question.domain} interview question:
 
 QUESTION: "${question.text}"
 TOPIC: ${question.topic}
@@ -55,7 +55,7 @@ Respond with JSON only:
   "redFlags": ["misconception 1", ...],
   "keywords": ["term1", "term2", ...]
 }`,
-    };
+  };
 }
 
 // ============= ANSWER EVALUATION =============
@@ -64,9 +64,9 @@ Respond with JSON only:
  * Generate prompt for extracting covered points from an answer
  */
 function generatePointExtractionPrompt(question, answer, rubric) {
-    return {
-        systemPrompt: SYSTEM_PROMPTS.evaluator,
-        prompt: `Evaluate this candidate's answer against the rubric.
+  return {
+    systemPrompt: SYSTEM_PROMPTS.evaluator,
+    prompt: `Evaluate this candidate's answer against the rubric.
 
 QUESTION: "${question.text}"
 TOPIC: ${question.topic}
@@ -100,16 +100,16 @@ Respond with JSON only:
   "overallAssessment": "brief 1-2 sentence assessment",
   "suggestedScore": 0-100
 }`,
-    };
+  };
 }
 
 /**
  * Generate prompt for detailed feedback
  */
 function generateFeedbackPrompt(question, answer, evaluation) {
-    return {
-        systemPrompt: SYSTEM_PROMPTS.evaluator,
-        prompt: `Generate constructive feedback for this interview answer.
+  return {
+    systemPrompt: SYSTEM_PROMPTS.evaluator,
+    prompt: `Generate constructive feedback for this interview answer.
 
 QUESTION: "${question.text}"
 CANDIDATE'S ANSWER: "${answer}"
@@ -136,7 +136,7 @@ Respond with JSON:
   "improvements": ["specific improvement 1", "specific improvement 2"],
   "studyTip": "one actionable study recommendation"
 }`,
-    };
+  };
 }
 
 // ============= FOLLOW-UP QUESTION GENERATION =============
@@ -145,15 +145,15 @@ Respond with JSON:
  * Generate prompt for follow-up questions
  */
 function generateFollowUpPrompt(question, answer, evaluation, depth = 1) {
-    const depthGuidance = {
-        1: 'Ask a clarifying question to probe understanding of a concept they mentioned.',
-        2: 'Ask a deeper technical question about implementation details or edge cases.',
-        3: 'Ask a challenging scenario-based question that tests practical application.',
-    };
+  const depthGuidance = {
+    1: 'Ask a clarifying question to probe understanding of a concept they mentioned.',
+    2: 'Ask a deeper technical question about implementation details or edge cases.',
+    3: 'Ask a challenging scenario-based question that tests practical application.',
+  };
 
-    return {
-        systemPrompt: SYSTEM_PROMPTS.interviewer,
-        prompt: `Generate a follow-up question for this interview.
+  return {
+    systemPrompt: SYSTEM_PROMPTS.interviewer,
+    prompt: `Generate a follow-up question for this interview.
 
 ORIGINAL QUESTION: "${question.text}"
 TOPIC: ${question.topic}
@@ -182,7 +182,7 @@ Respond with JSON:
   "expectedTopics": ["topic1", "topic2"],
   "difficulty": "Easy/Medium/Hard"
 }`,
-    };
+  };
 }
 
 // ============= SEMANTIC MATCHING =============
@@ -191,9 +191,9 @@ Respond with JSON:
  * Generate prompt for semantic matching of answer to rubric points
  */
 function generateSemanticMatchPrompt(answerSegment, rubricPoints) {
-    return {
-        systemPrompt: SYSTEM_PROMPTS.evaluator,
-        prompt: `Determine which rubric points are covered by this answer segment.
+  return {
+    systemPrompt: SYSTEM_PROMPTS.evaluator,
+    prompt: `Determine which rubric points are covered by this answer segment.
 
 ANSWER SEGMENT:
 "${answerSegment}"
@@ -213,7 +213,7 @@ Respond with JSON:
     ...
   ]
 }`,
-    };
+  };
 }
 
 // ============= ROADMAP GENERATION =============
@@ -222,10 +222,10 @@ Respond with JSON:
  * Generate prompt for personalized study roadmap
  */
 function generateRoadmapPrompt(userProfile) {
-    return {
-        systemPrompt: `You are an expert technical career coach creating personalized study plans.
+  return {
+    systemPrompt: `You are an expert technical career coach creating personalized study plans.
 You understand interview preparation and create practical, achievable roadmaps.`,
-        prompt: `Create a personalized 4-week study roadmap based on this user's performance.
+    prompt: `Create a personalized 4-week study roadmap based on this user's performance.
 
 USER PROFILE:
 - Overall Score: ${userProfile.overallScore}/100
@@ -266,15 +266,86 @@ Respond with JSON:
   ],
   "milestones": ["milestone1", "milestone2", "milestone3"]
 }`,
-    };
+  };
+}
+
+// ============= INTERVIEWER COMMENTARY =============
+
+/**
+ * Generate prompt for natural interviewer commentary after an answer
+ */
+function generateInterviewerCommentary(question, answer, evaluation, feedback) {
+  return {
+    systemPrompt: `You are a senior technical interviewer at a top tech company conducting a live interview. 
+You speak naturally, conversationally, and professionally — like a real human interviewer would.
+You are warm but rigorous. You never say "Great job!" generically — you reference specifics from the answer.
+Keep responses concise (2-4 sentences). Do NOT repeat the score or list points — the UI shows those separately.`,
+    prompt: `You just heard a candidate's answer. Respond naturally as an interviewer would in a real interview.
+
+QUESTION YOU ASKED: "${question.text}"
+TOPIC: ${question.topic}
+
+CANDIDATE'S ANSWER (summary):
+"${answer.substring(0, 600)}"
+
+EVALUATION RESULTS (for your reference only — do NOT quote these directly):
+- Score: ${evaluation.score || evaluation.finalScore || 'N/A'}/10
+- Strengths: ${(feedback?.didWell || feedback?.strengths || []).slice(0, 2).join(', ') || 'None noted'}
+- Gaps: ${(feedback?.needsImprovement || feedback?.improvements || []).slice(0, 2).join(', ') || 'None noted'}
+
+${evaluation.score >= 7 ? 'The answer was strong. Acknowledge what impressed you specifically, then transition naturally.' : ''}
+${evaluation.score >= 4 && evaluation.score < 7 ? 'The answer was partial. Acknowledge what was good, gently note what was missing, and encourage.' : ''}
+${evaluation.score < 4 ? 'The answer missed key concepts. Be kind but honest. Briefly explain what you were looking for.' : ''}
+
+Respond with JSON:
+{
+  "message": "Your natural interviewer response (2-4 sentences, conversational)",
+  "tone": "encouraging|neutral|probing",
+  "shouldFollowUp": ${evaluation.score < 6 ? 'true' : 'false'}
+}`
+  };
+}
+
+// ============= CLARIFICATION RESPONSE =============
+
+/**
+ * Generate prompt for answering candidate's mid-question doubts
+ */
+function generateClarificationResponse(question, doubt) {
+  return {
+    systemPrompt: `You are a senior technical interviewer. A candidate has a doubt about the question you asked.
+Respond like a real interviewer would: clarify the question, provide context, or rephrase — but NEVER give away the answer.
+Be helpful and conversational. Keep it to 1-3 sentences.`,
+    prompt: `The candidate has a doubt while answering your interview question.
+
+YOUR QUESTION: "${question.text}"
+TOPIC: ${question.topic}
+DIFFICULTY: ${question.difficulty}
+
+CANDIDATE'S DOUBT: "${doubt}"
+
+Respond naturally as an interviewer would. You can:
+- Rephrase the question if they're confused
+- Clarify scope ("I'm looking for..." or "Think about it in terms of...")
+- Give a gentle nudge without revealing the answer
+- Confirm if their understanding of the question is correct
+
+Respond with JSON:
+{
+  "message": "Your clarification response (1-3 sentences)",
+  "rephrased": "Optional: a clearer version of the question, or null if not needed"
+}`
+  };
 }
 
 module.exports = {
-    SYSTEM_PROMPTS,
-    generateRubricPrompt,
-    generatePointExtractionPrompt,
-    generateFeedbackPrompt,
-    generateFollowUpPrompt,
-    generateSemanticMatchPrompt,
-    generateRoadmapPrompt,
+  SYSTEM_PROMPTS,
+  generateRubricPrompt,
+  generatePointExtractionPrompt,
+  generateFeedbackPrompt,
+  generateFollowUpPrompt,
+  generateSemanticMatchPrompt,
+  generateRoadmapPrompt,
+  generateInterviewerCommentary,
+  generateClarificationResponse,
 };

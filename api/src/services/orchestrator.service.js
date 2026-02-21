@@ -471,6 +471,21 @@ class OrchestratorService {
         state.lastAnswer = answer;
         state.lastPolicyDecision = evaluation.nextAction;
 
+        // Generate interviewer commentary (natural conversational response)
+        let interviewerMessage = null;
+        try {
+            const commentary = await interviewerService.generateCommentary({
+                question: state.currentQuestion || { text: 'N/A', topic: 'N/A' },
+                answer: enrichedAnswer,
+                evaluation,
+                feedback: evaluation.feedback,
+            });
+            interviewerMessage = commentary;
+        } catch (err) {
+            console.warn('[Orchestrator] Interviewer commentary failed:', err.message);
+            interviewerMessage = { message: "Let's continue.", tone: 'neutral', shouldFollowUp: false };
+        }
+
         // Update session stats in DB
         await prisma.session.update({
             where: { id: sessionId },
@@ -490,6 +505,7 @@ class OrchestratorService {
                 evaluation: this.formatEvaluation(evaluation),
                 action: 'end_session',
                 report,
+                interviewerMessage,
                 state: this.getPublicState(state),
             };
         }
@@ -497,6 +513,7 @@ class OrchestratorService {
         return {
             evaluation: this.formatEvaluation(evaluation),
             nextAction: evaluation.nextAction,
+            interviewerMessage,
             state: this.getPublicState(state),
             feedback: evaluation.feedback,
         };
@@ -649,6 +666,7 @@ class OrchestratorService {
             difficulty: question.difficulty,
             isFollowUp: question.isFollowUp || false,
             followUpDepth: question.followUpDepth || 0,
+            interviewerIntro: question.interviewerIntro || null,
             hints: question.hints?.length || 0,
             companyTags: question.companyTags || [],
         };

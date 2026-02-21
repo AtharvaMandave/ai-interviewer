@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Rocket,
   Target,
@@ -13,20 +13,15 @@ import {
   FileText,
   Building2,
   ChevronRight,
-  Sparkles,
   CheckCircle2,
-  Users
+  Users,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import AnoAI from '@/components/ui/animated-shader-background';
 
 export default function Home() {
   const [user, setUser] = useState(null);
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-  const y2 = useTransform(scrollY, [0, 500], [0, -150]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -39,64 +34,85 @@ export default function Home() {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.08 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5 }
+      transition: { duration: 0.45, ease: [0.2, 0, 0.2, 1] }
     }
   };
 
   return (
-    <div className="min-h-screen text-foreground overflow-x-hidden font-sans">
+    <div className="min-h-screen overflow-x-hidden" style={{ background: '#F9FAFB', color: '#111827', fontFamily: 'Inter, Helvetica Neue, system-ui, sans-serif' }}>
 
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <AnoAI />
-      </div>
-
-      {/* Navbar */}
-      <nav className="fixed top-6 left-0 right-0 mx-auto w-[92%] max-w-6xl z-50 rounded-2xl border border-white/10 bg-black/20 backdrop-blur-xl shadow-lg shadow-black/10">
-        <div className="px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors ring-1 ring-white/10">
-              <Code className="w-5 h-5 text-primary" />
+      {/* ───── NAVBAR ───── */}
+      <nav style={{
+        height: '64px',
+        borderBottom: '1px solid #E5E7EB',
+        background: 'rgba(249,250,251,0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Brand */}
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px',
+              background: '#2563EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Code style={{ width: '18px', height: '18px', color: '#fff' }} />
             </div>
-            <span className="text-lg font-bold text-foreground tracking-tight">
-              Interview<span className="text-primary">AI</span>
+            <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
+              Interview<span style={{ color: '#2563EB' }}>AI</span>
             </span>
           </Link>
 
-          <div className="flex items-center gap-8">
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-              <Link href="/features" className="hover:text-white transition-colors">Features</Link>
-              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/about" className="hover:text-white transition-colors">About</Link>
+          {/* Nav Links */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <div className="hidden md:flex" style={{ gap: '32px', alignItems: 'center' }}>
+              {['Features', 'Pricing', 'About'].map(link => (
+                <Link
+                  key={link}
+                  href={`/${link.toLowerCase()}`}
+                  style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280', textDecoration: 'none', transition: 'color 0.15s' }}
+                  onMouseEnter={e => e.target.style.color = '#111827'}
+                  onMouseLeave={e => e.target.style.color = '#6B7280'}
+                >
+                  {link}
+                </Link>
+              ))}
             </div>
 
             {user ? (
-              <div className="flex items-center gap-4">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Link href="/dashboard">
-                  <Button variant="ghost" className="text-zinc-300 hover:text-white hover:bg-white/5 rounded-xl">Dashboard</Button>
+                  <Button variant="ghost" size="sm">Dashboard</Button>
                 </Link>
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-violet-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-primary/20">
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: '#EFF6FF', border: '1px solid #BFDBFE',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '13px', fontWeight: 700, color: '#2563EB'
+                }}>
                   {user.name?.charAt(0)}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Link href="/login">
-                  <Button variant="ghost" className="text-zinc-300 hover:text-white hover:bg-white/5 rounded-xl">Sign In</Button>
+                  <Button variant="ghost" size="sm">Sign In</Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" className="rounded-xl shadow-lg shadow-primary/20" icon={ChevronRight}>
+                  <Button variant="primary" size="sm" icon={ChevronRight}>
                     Get Started
                   </Button>
                 </Link>
@@ -106,146 +122,380 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="relative pt-32 pb-20">
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-center max-w-4xl mx-auto space-y-8"
-          >
-            <motion.div variants={itemVariants} className="flex justify-center">
-            
-            </motion.div>
+      <main>
+        {/* ───── HERO SECTION ───── */}
+        <section style={{ padding: '100px 24px 80px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto' }}
+            >
+              <motion.div variants={itemVariants} style={{ marginBottom: '24px' }}>
+               
+              </motion.div>
 
-            <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-foreground">
-              Master Your Next <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500">
-                Technical Interview
-              </span>
-            </motion.h1>
+              <motion.h1 variants={itemVariants} style={{
+                fontSize: 'clamp(40px, 5.5vw, 56px)',
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.15,
+                color: '#111827',
+                marginBottom: '24px'
+              }}>
+                Master Your Next <br />
+                <span style={{ color: '#2563EB' }}>Technical Interview</span>
+              </motion.h1>
 
-            <motion.p variants={itemVariants} className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Practice with our intelligent AI coach that adapts to your skill level,
-              provides real-time feedback, and helps you land your dream job.
-            </motion.p>
+              <motion.p variants={itemVariants} style={{
+                fontSize: '18px',
+                color: '#6B7280',
+                lineHeight: 1.65,
+                maxWidth: '540px',
+                margin: '0 auto 40px'
+              }}>
+                Practice with our intelligent AI coach that adapts to your skill level,
+                provides real-time feedback, and helps you land your dream job.
+              </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/interview">
-                <Button variant="primary" size="xl" icon={Rocket} className="w-full sm:w-auto px-8">
-                  Start Practicing Now
-                </Button>
-              </Link>
-              <Link href="#demo">
-                <Button variant="secondary" size="xl" icon={Target} className="w-full sm:w-auto px-8">
-                  View Demo
-                </Button>
-              </Link>
-            </motion.div>
+              <motion.div
+                variants={itemVariants}
+                style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '12px' }}
+              >
+                <Link href="/interview">
+                  <Button variant="primary" size="xl" icon={Rocket}>
+                    Start Practicing Now
+                  </Button>
+                </Link>
+              
+              </motion.div>
 
-            {/* Stats */}
-            <motion.div variants={itemVariants} className="pt-20 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-border mt-20">
-              {[
-                { label: "Active Users", value: "10,000+", icon: Users },
-                { label: "Questions Solved", value: "500k+", icon: CheckCircle2 },
-                { label: "Offer Rate", value: "94%", icon: TrendingUp },
-                { label: "Partner Companies", value: "50+", icon: Building2 },
-              ].map((stat, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-lg bg-surface mb-2 border border-border">
-                    <stat.icon className="w-5 h-5 text-muted-foreground" />
+              {/* Stats Row */}
+              <motion.div
+                variants={itemVariants}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '0',
+                  marginTop: '80px',
+                  paddingTop: '48px',
+                  borderTop: '1px solid #E5E7EB'
+                }}
+                className="grid-cols-2 md:grid-cols-4"
+              >
+                {[
+                  { label: "Active Users", value: "10,000+", icon: Users },
+                  { label: "Questions Solved", value: "500k+", icon: CheckCircle2 },
+                  { label: "Offer Rate", value: "94%", icon: TrendingUp },
+                  { label: "Partner Companies", value: "50+", icon: Building2 },
+                ].map((stat, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '0 16px' }}>
+                    <div style={{
+                      padding: '8px', borderRadius: '10px',
+                      background: '#F3F4F6', border: '1px solid #E5E7EB',
+                      marginBottom: '4px'
+                    }}>
+                      <stat.icon style={{ width: '18px', height: '18px', color: '#6B7280' }} />
+                    </div>
+                    <div style={{ fontSize: '26px', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
+                      {stat.value}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
+                      {stat.label}
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</div>
+                ))}
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ───── FEATURE GRID SECTION ───── */}
+        <section id="demo" style={{ padding: '100px 24px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Section Header */}
+            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+              <p style={{
+                fontSize: '13px', fontWeight: 600, color: '#2563EB',
+                textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px'
+              }}>
+                Practice Modes
+              </p>
+              <h2 style={{
+                fontSize: 'clamp(24px, 3vw, 32px)',
+                fontWeight: 700,
+                color: '#111827',
+                letterSpacing: '-0.025em',
+                marginBottom: '16px'
+              }}>
+                Practice Your Way
+              </h2>
+              <p style={{ fontSize: '17px', color: '#6B7280', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>
+                Four powerful modes designed to cover every aspect of your interview preparation journey.
+              </p>
+            </div>
+
+            {/* 2×2 Grid → 4 features */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '24px'
+            }} className="grid-cols-1 md:grid-cols-2">
+              {[
+                {
+                  title: "Company Wise",
+                  desc: "Target specific top-tier companies like Google, Amazon, and Microsoft with curated questions and patterns.",
+                  icon: Building2,
+                  color: '#2563EB',
+                  bg: '#EFF6FF',
+                  href: "/companywise"
+                },
+                {
+                  title: "Topic Wise",
+                  desc: "Deep dive into specific concepts like DSA, System Design, OS, DBMS, and more.",
+                  icon: Brain,
+                  color: '#7C3AED',
+                  bg: '#F5F3FF',
+                  href: "/topicwise"
+                },
+                {
+                  title: "Role Specific",
+                  desc: "Tailored questions for Frontend, Backend, DevOps, and other engineering roles.",
+                  icon: Briefcase,
+                  color: '#D97706',
+                  bg: '#FFFBEB',
+                  href: "/rolespecific"
+                },
+                {
+                  title: "Resume Based",
+                  desc: "Upload your resume and get questions pertinent to your actual experience and projects.",
+                  icon: FileText,
+                  color: '#059669',
+                  bg: '#ECFDF5',
+                  href: "/resumebased"
+                },
+              ].map((feature, i) => (
+                <Link key={i} href={feature.href} style={{ textDecoration: 'none' }}>
+                  <div
+                    className="hover-lift group"
+                    style={{
+                      background: '#FFFFFF',
+                      borderRadius: '16px',
+                      border: '1px solid #E5E7EB',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                      padding: '32px',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      height: '100%'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.08)';
+                      e.currentTarget.style.transform = 'translateY(-3px)';
+                      e.currentTarget.style.borderColor = '#D1D5DB';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.04)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                    }}
+                  >
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: '12px',
+                      background: feature.bg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: '24px',
+                      transition: 'transform 0.2s ease'
+                    }}>
+                      <feature.icon style={{ width: '24px', height: '24px', color: feature.color }} />
+                    </div>
+                    <h3 style={{
+                      fontSize: '18px', fontWeight: 600, color: '#111827',
+                      marginBottom: '12px', letterSpacing: '-0.01em'
+                    }}>
+                      {feature.title}
+                    </h3>
+                    <p style={{ fontSize: '14px', color: '#6B7280', lineHeight: 1.65, marginBottom: '20px' }}>
+                      {feature.desc}
+                    </p>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      fontSize: '14px', fontWeight: 500, color: '#2563EB'
+                    }}>
+                      Start practicing <ArrowRight style={{ width: '14px', height: '14px' }} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ───── HOW IT WORKS ───── */}
+        <section style={{ padding: '100px 24px', background: '#FFFFFF', borderTop: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                How It Works
+              </p>
+              <h2 style={{ fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 700, color: '#111827', letterSpacing: '-0.025em', marginBottom: '16px' }}>
+                From Zero to Interview-Ready
+              </h2>
+              <p style={{ fontSize: '17px', color: '#6B7280', maxWidth: '480px', margin: '0 auto' }}>
+                Start in seconds. Our AI handles the rest.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '32px'
+            }} className="grid-cols-1 md:grid-cols-3">
+              {[
+                {
+                  step: '01',
+                  title: 'Choose a Mode',
+                  desc: 'Pick company, topic, role, or upload your resume. The AI creates a custom session.',
+                  icon: Target
+                },
+                {
+                  step: '02',
+                  title: 'Practice with AI',
+                  desc: 'Answer questions via text or voice. Follow-up questions adapt to your responses.',
+                  icon: Brain
+                },
+                {
+                  step: '03',
+                  title: 'Get Insights',
+                  desc: 'Receive a detailed performance report with weak areas and improvement suggestions.',
+                  icon: TrendingUp
+                },
+              ].map((step, i) => (
+                <div key={i} style={{
+                  background: '#F9FAFB',
+                  borderRadius: '16px',
+                  border: '1px solid #E5E7EB',
+                  padding: '32px'
+                }}>
+                  <div style={{
+                    fontSize: '12px', fontWeight: 700, color: '#9CA3AF',
+                    letterSpacing: '0.08em', marginBottom: '20px'
+                  }}>
+                    STEP {step.step}
+                  </div>
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '12px',
+                    background: '#EFF6FF',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '20px'
+                  }}>
+                    <step.icon style={{ width: '22px', height: '22px', color: '#2563EB' }} />
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>
+                    {step.title}
+                  </h3>
+                  <p style={{ fontSize: '14px', color: '#6B7280', lineHeight: 1.65 }}>
+                    {step.desc}
+                  </p>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Features Preview */}
-        <div className="max-w-7xl mx-auto px-6 mt-32">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold text-foreground">Practice Your Way</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Four powerful modes designed to cover every aspect of your interview preparation journey.
-            </p>
+            </div>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Company Wise",
-                desc: "Target specific top-tier companies like Google, Amazon, and Microsoft.",
-                icon: Building2,
-                color: "text-blue-500",
-                bg: "bg-blue-500/10",
-                border: "group-hover:border-blue-500/30",
-                href: "/companywise"
-              },
-              {
-                title: "Topic Wise",
-                desc: "Deep dive into specific concepts like DSA, System Design, and more.",
-                icon: Brain,
-                color: "text-violet-500",
-                bg: "bg-violet-500/10",
-                border: "group-hover:border-violet-500/30",
-                href: "/topicwise"
-              },
-              {
-                title: "Role Specific",
-                desc: "Tailored questions for Frontend, Backend, DevOps, and other roles.",
-                icon: Briefcase,
-                color: "text-amber-500",
-                bg: "bg-amber-500/10",
-                border: "group-hover:border-amber-500/30",
-                href: "/rolespecific"
-              },
-              {
-                title: "Resume Based",
-                desc: "Upload your resume and get questions pertinent to your experience.",
-                icon: FileText,
-                color: "text-emerald-500",
-                bg: "bg-emerald-500/10",
-                border: "group-hover:border-emerald-500/30",
-                href: "/resumebased"
-              },
-            ].map((feature, i) => (
-              <Link key={i} href={feature.href}>
-                <Card
-                  hover
-                  animate={false}
-                  className={`h-full group cursor-pointer border-border transition-all duration-300 hover:-translate-y-1 ${feature.border}`}
-                >
-                  <div className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
-                </Card>
-              </Link>
-            ))}
+        {/* ───── CTA BAND ───── */}
+        <section style={{ padding: '100px 24px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{
+              background: '#2563EB',
+              borderRadius: '20px',
+              padding: '64px 48px',
+              textAlign: 'center'
+            }}>
+              <h2 style={{
+                fontSize: 'clamp(24px, 3vw, 36px)',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                letterSpacing: '-0.025em',
+                marginBottom: '16px'
+              }}>
+                Ready to ace your next interview?
+              </h2>
+              <p style={{ fontSize: '17px', color: 'rgba(255,255,255,0.75)', marginBottom: '36px' }}>
+                Join 10,000+ developers who practice smarter with InterviewAI.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <Link href="/register">
+                  <button style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '14px 28px', borderRadius: '12px',
+                    background: '#FFFFFF', color: '#2563EB',
+                    fontSize: '15px', fontWeight: 600,
+                    border: 'none', cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F0F9FF'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    Get Started Free <ChevronRight style={{ width: '16px', height: '16px' }} />
+                  </button>
+                </Link>
+                <Link href="/interview">
+                  <button style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '14px 28px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.12)', color: '#FFFFFF',
+                    fontSize: '15px', fontWeight: 600,
+                    border: '1px solid rgba(255,255,255,0.25)', cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                  >
+                    Try Demo First
+                  </button>
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-background py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Code className="w-4 h-4 text-white" />
+      {/* ───── FOOTER ───── */}
+      <footer style={{ borderTop: '1px solid #E5E7EB', background: '#FFFFFF', padding: '48px 24px' }}>
+        <div style={{
+          maxWidth: '1200px', margin: '0 auto',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'space-between',
+          gap: '24px'
+        }} className="md:flex-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '8px',
+              background: '#2563EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Code style={{ width: '16px', height: '16px', color: '#fff' }} />
             </div>
-            <span className="font-bold text-foreground">InterviewAI</span>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>InterviewAI</span>
           </div>
-          <p className="text-muted-foreground text-sm">
+
+          <p style={{ fontSize: '14px', color: '#9CA3AF' }}>
             © 2026 InterviewAI. Building the future of technical hiring.
           </p>
-          <div className="flex gap-6 text-muted-foreground text-sm font-medium">
-            <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Twitter</Link>
+
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {['Privacy', 'Terms', 'Twitter'].map(link => (
+              <Link
+                key={link}
+                href="#"
+                style={{ fontSize: '14px', fontWeight: 500, color: '#9CA3AF', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => e.target.style.color = '#111827'}
+                onMouseLeave={e => e.target.style.color = '#9CA3AF'}
+              >
+                {link}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

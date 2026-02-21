@@ -10,6 +10,7 @@
 const { prisma } = require('../db/prisma');
 const { llmService } = require('./llm.service');
 const { policyEngine } = require('./policy-engine.service');
+const { generateInterviewerCommentary, generateClarificationResponse } = require('./prompts');
 
 class InterviewerService {
 
@@ -263,6 +264,7 @@ ${focus ? '- Addresses the missed concept without directly revealing the answer'
 Respond with JSON:
 {
   "question": "the follow-up question text",
+  "interviewerIntro": "A short conversational intro sentence before the follow-up, like 'Interesting point — let me dig deeper on that...' or 'I want to explore something you mentioned...'",
   "targetConcept": "what concept this tests",
   "expectedKeyPoints": ["point 1", "point 2"],
   "difficulty": "Easy|Medium|Hard",
@@ -277,6 +279,7 @@ Respond with JSON:
 
             return {
                 text: result.question,
+                interviewerIntro: result.interviewerIntro || null,
                 isFollowUp: true,
                 followUpDepth: depth,
                 parentQuestionId: question.id,
@@ -428,6 +431,76 @@ Respond with JSON:
                 userId,
                 excludeIds: askedQuestionIds
             });
+        }
+    }
+
+    // ============= INTERVIEWER COMMENTARY =============
+
+    /**
+     * Generate natural conversational interviewer response after an answer
+     */
+    async generateCommentary(context) {
+        const { question, answer, evaluation, feedback } = context;
+
+        const { systemPrompt, prompt } = generateInterviewerCommentary(
+            question, answer, evaluation, feedback
+        );
+
+        try {
+            const result = await llmService.generateJSON(prompt, {
+                systemPrompt,
+                temperature: 0.7,
+                maxTokens: 300,
+            });
+
+            return {
+                message: result.message || "Let's move on to the next question.",
+                tone: result.tone || 'neutral',
+                shouldFollowUp: result.shouldFollowUp || false,
+            };
+        } catch (error) {
+            console.error('[Interviewer] Commentary generation failed:', error.message);
+            // Fallback to a simple response based on score
+            const score = evaluation?.score || evaluation?.finalScore || 5;
+            let message;
+            if (score >= 7) {
+                message = "That was a solid answer. Let me move on to the next question.";
+            } else if (score >= 4) {
+                message = "You covered some good points there. Let's continue.";
+            } else {
+                message = "I see. Let me ask you something related to help clarify this concept.";
+            }
+            return { message, tone: 'neutral', shouldFollowUp: score < 6 };
+        }
+    }
+
+    // ============= CLARIFICATION (MID-QUESTION DOUBTS) =============
+
+    /**
+     * Handle candidate's doubt about the current question
+     */
+    async generateClarification(context) {
+        const { question, doubt } = context;
+
+        const { systemPrompt, prompt } = generateClarificationResponse(question, doubt);
+
+        try {
+            const result = await llmService.generateJSON(prompt, {
+                systemPrompt,
+                temperature: 0.5,
+                maxTokens: 300,
+            });
+
+            return {
+                message: result.message || "Let me rephrase that for you.",
+                rephrased: result.rephrased || null,
+            };
+        } catch (error) {
+            console.error('[Interviewer] Clarification generation failed:', error.message);
+            return {
+                message: `To clarify — I'm asking about ${question.topic}. Think about the core concepts involved and how they apply in practice.`,
+                rephrased: null,
+            };
         }
     }
 }

@@ -14,16 +14,16 @@ import {
     CheckCircle2,
     Target,
     AlertCircle,
-    ArrowRight
+    ArrowRight,
+    Code
 } from 'lucide-react';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 // ============= THEME & CONSTANTS =============
 
-const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+const COLORS = ['#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626', '#0891B2'];
 
 // ============= COMPONENT: DASHBOARD PAGE =============
 
@@ -32,10 +32,8 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
 
-    // Initialize & Load Data
     useEffect(() => {
         const init = async () => {
-            // User Setup
             let storedUserId;
             const userStr = localStorage.getItem('user');
             if (userStr) {
@@ -56,7 +54,6 @@ export default function DashboardPage() {
             }
             setUserId(storedUserId);
 
-            // Fetch All Dashboard Data
             try {
                 const [summary, domains, history, trends, skills, mistakes] = await Promise.all([
                     api.getDashboardSummary(storedUserId),
@@ -67,7 +64,14 @@ export default function DashboardPage() {
                     api.getMistakePatterns(storedUserId),
                 ]);
 
-                setData({ summary: summary.data, domains: domains.data, history: history.data?.sessions || [], trends: trends.data, skills: skills.data, mistakes: mistakes.data });
+                setData({
+                    summary: summary.data,
+                    domains: domains.data,
+                    history: history.data?.sessions || [],
+                    trends: trends.data,
+                    skills: skills.data,
+                    mistakes: mistakes.data
+                });
             } catch (err) {
                 console.error('Data load failed:', err);
             } finally {
@@ -80,24 +84,43 @@ export default function DashboardPage() {
 
     if (loading) return <LoadingScreen />;
 
-    // Empty State Check
     const hasActivity = data?.summary?.sessions?.total > 0;
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans">
+        <div style={{
+            minHeight: '100vh',
+            background: '#F9FAFB',
+            color: '#111827',
+            fontFamily: 'Inter, Helvetica Neue, system-ui, sans-serif'
+        }}>
             {/* Navbar */}
-            <header className="sticky top-0 z-50 backdrop-blur-md border-b border-border bg-background/80">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold transition-all">
-                            AI
+            <header style={{
+                position: 'sticky', top: 0, zIndex: 50,
+                height: '64px',
+                borderBottom: '1px solid #E5E7EB',
+                background: 'rgba(249,250,251,0.92)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)'
+            }}>
+                <div style={{
+                    maxWidth: '1200px', margin: '0 auto',
+                    padding: '0 24px', height: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                        <div style={{
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: '#2563EB',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <Code style={{ width: '16px', height: '16px', color: '#fff' }} />
                         </div>
-                        <span className="font-bold text-lg text-foreground">
-                            Interview<span className="text-primary">Coach</span>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
+                            Interview<span style={{ color: '#2563EB' }}>Coach</span>
                         </span>
                     </Link>
 
-                    <nav className="flex items-center gap-6">
+                    <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Link href="/interview">
                             <Button variant="ghost" size="sm">Practice Area</Button>
                         </Link>
@@ -105,32 +128,52 @@ export default function DashboardPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => api.logout()}
-                            className="text-muted-foreground hover:text-foreground"
                             icon={LogOut}
+                            style={{ color: '#9CA3AF' }}
                         >
                             Sign Out
                         </Button>
-                        <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                        <div style={{
+                            width: '36px', height: '36px', borderRadius: '10px',
+                            background: '#EFF6FF', border: '1px solid #BFDBFE',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '12px', fontWeight: 700, color: '#2563EB'
+                        }}>
                             {Math.round(data?.summary?.overview?.overallMastery || 0)}%
                         </div>
                     </nav>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-                {/* Welcome Section */}
-                <div className="flex flex-col md:flex-row items-end justify-between gap-6 pb-6 border-b border-border">
+            <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px 80px' }}>
+                {/* Page Header */}
+                <div style={{
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+                    gap: '24px', paddingBottom: '32px',
+                    borderBottom: '1px solid #E5E7EB',
+                    marginBottom: '32px'
+                }} className="flex-col md:flex-row">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
-                            <LayoutDashboard className="w-8 h-8 text-primary" />
-                            Dashboard
-                        </h1>
-                        <p className="text-muted-foreground">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <div style={{
+                                padding: '8px', borderRadius: '10px',
+                                background: '#EFF6FF'
+                            }}>
+                                <LayoutDashboard style={{ width: '20px', height: '20px', color: '#2563EB' }} />
+                            </div>
+                            <h1 style={{
+                                fontSize: '26px', fontWeight: 700,
+                                color: '#111827', letterSpacing: '-0.025em'
+                            }}>
+                                Dashboard
+                            </h1>
+                        </div>
+                        <p style={{ fontSize: '14px', color: '#6B7280' }}>
                             Track your progress, analyze patterns, and master your technical skills.
                         </p>
                     </div>
                     <Link href="/interview">
-                        <Button variant="primary" size="lg" icon={ArrowRight}>
+                        <Button variant="primary" size="md" icon={ArrowRight}>
                             Start New Session
                         </Button>
                     </Link>
@@ -141,212 +184,284 @@ export default function DashboardPage() {
                 ) : (
                     <>
                         {/* KPI Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, 1fr)',
+                            gap: '16px',
+                            marginBottom: '24px'
+                        }} className="grid-cols-2 lg:grid-cols-4">
                             <KpiCard
                                 title="Overall Mastery"
                                 value={`${data.summary.overview.overallMastery}%`}
                                 trend={data.summary.streak > 0 ? `🔥 ${data.summary.streak} Day Streak` : 'Keep practicing!'}
-                                color="text-violet-500"
-                                bg="bg-violet-500/10"
+                                accentColor='#7C3AED'
+                                accentBg='#F5F3FF'
                                 icon={Zap}
                             />
                             <KpiCard
                                 title="Questions Solved"
                                 value={data.summary.overview.totalQuestions}
                                 trend={`${data.summary.overview.accuracy}% Accuracy`}
-                                color="text-blue-500"
-                                bg="bg-blue-500/10"
+                                accentColor='#2563EB'
+                                accentBg='#EFF6FF'
                                 icon={CheckCircle2}
                             />
                             <KpiCard
                                 title="Topics Covered"
                                 value={data.summary.overview.topicsLearned}
                                 trend="Across all domains"
-                                color="text-emerald-500"
-                                bg="bg-emerald-500/10"
+                                accentColor='#059669'
+                                accentBg='#ECFDF5'
                                 icon={Target}
                             />
                             <KpiCard
                                 title="Active Issues"
                                 value={data.mistakes.length}
                                 trend={data.mistakes.length > 0 ? "Requires attention" : "All clear!"}
-                                color={data.mistakes.length > 0 ? "text-rose-500" : "text-muted-foreground"}
-                                bg={data.mistakes.length > 0 ? "bg-rose-500/10" : "bg-surface"}
+                                accentColor={data.mistakes.length > 0 ? '#DC2626' : '#9CA3AF'}
+                                accentBg={data.mistakes.length > 0 ? '#FEF2F2' : '#F3F4F6'}
                                 icon={AlertCircle}
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Main Chart Area */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Activity Chart */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Performance Trend</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={data.trends.daily}>
-                                                    <defs>
-                                                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} tickFormatter={d => new Date(d).getDate()} />
-                                                    <YAxis stroke="hsl(var(--muted-foreground))" domain={[0, 10]} tick={{ fontSize: 12 }} />
-                                                    <Tooltip
-                                                        contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }}
-                                                        itemStyle={{ color: '#8b5cf6' }}
-                                                    />
-                                                    <Area type="monotone" dataKey="avgScore" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorScore)" />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                        {/* Main Grid — 2/3 + 1/3 */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 340px',
+                            gap: '24px',
+                            alignItems: 'start'
+                        }} className="grid-cols-1 lg:grid-cols-[1fr_340px]">
+                            {/* Left: Charts */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                {/* Performance Trend */}
+                                <div style={{
+                                    background: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    border: '1px solid #E5E7EB',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{ padding: '20px 24px 0' }}>
+                                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                            Performance Trend
+                                        </p>
+                                    </div>
+                                    <div style={{ padding: '16px 24px 24px', height: '300px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={data.trends.daily}>
+                                                <defs>
+                                                    <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.12} />
+                                                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                                                <XAxis dataKey="date" stroke="#D1D5DB" tick={{ fontSize: 11, fill: '#9CA3AF' }} tickFormatter={d => new Date(d).getDate()} />
+                                                <YAxis stroke="#D1D5DB" domain={[0, 10]} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', color: '#111827', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+                                                    itemStyle={{ color: '#2563EB' }}
+                                                />
+                                                <Area type="monotone" dataKey="avgScore" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
 
-                                {/* Recent Sessions List */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Sessions</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="text-muted-foreground text-xs uppercase tracking-wider border-b border-border">
-                                                        <th className="py-3 pl-6 font-medium">Date</th>
-                                                        <th className="py-3 font-medium">Topic</th>
-                                                        <th className="py-3 font-medium">Score</th>
-                                                        <th className="py-3 font-medium">Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="text-sm">
-                                                    {data.history.map((session, i) => (
-                                                        <tr key={i} className="group hover:bg-surface/50 transition-colors border-b border-border last:border-0">
-                                                            <td className="py-4 pl-6 text-muted-foreground font-mono">
-                                                                {new Date(session.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                                            </td>
-                                                            <td className="py-4 font-medium text-foreground">
-                                                                {session.domain} <span className="text-muted-foreground mx-1">•</span> {session.difficulty}
-                                                            </td>
-                                                            <td className="py-4">
-                                                                <Badge variant={
-                                                                    session.avgScore >= 8 ? 'success' :
-                                                                        session.avgScore >= 6 ? 'warning' : 'danger'
-                                                                }>
-                                                                    {(session.avgScore || 0).toFixed(1)}/10
-                                                                </Badge>
-                                                            </td>
-                                                            <td className="py-4">
-                                                                <Badge variant={session.status === 'completed' ? 'primary' : 'neutral'}>
-                                                                    {session.status}
-                                                                </Badge>
-                                                            </td>
-                                                        </tr>
+                                {/* Recent Sessions */}
+                                <div style={{
+                                    background: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    border: '1px solid #E5E7EB',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{ padding: '20px 24px 0' }}>
+                                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                            Recent Sessions
+                                        </p>
+                                    </div>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
+                                                    {['Date', 'Topic', 'Score', 'Status'].map(h => (
+                                                        <th key={h} style={{
+                                                            padding: '12px 24px',
+                                                            textAlign: 'left',
+                                                            fontSize: '11px',
+                                                            fontWeight: 700,
+                                                            color: '#9CA3AF',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.06em'
+                                                        }}>
+                                                            {h}
+                                                        </th>
                                                     ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {data.history.map((session, i) => (
+                                                    <tr
+                                                        key={i}
+                                                        style={{
+                                                            borderBottom: i === data.history.length - 1 ? 'none' : '1px solid #F3F4F6',
+                                                            transition: 'background 0.1s'
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#FAFAFA'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        <td style={{ padding: '14px 24px', fontSize: '13px', color: '#6B7280', fontFamily: 'monospace' }}>
+                                                            {new Date(session.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px', fontSize: '14px', fontWeight: 500, color: '#111827' }}>
+                                                            {session.domain} <span style={{ color: '#D1D5DB', margin: '0 4px' }}>•</span> {session.difficulty}
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <Badge variant={
+                                                                session.avgScore >= 8 ? 'success' :
+                                                                    session.avgScore >= 6 ? 'warning' : 'danger'
+                                                            }>
+                                                                {(session.avgScore || 0).toFixed(1)}/10
+                                                            </Badge>
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <Badge variant={session.status === 'completed' ? 'primary' : 'neutral'}>
+                                                                {session.status}
+                                                            </Badge>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Sidebar Stats */}
-                            <div className="space-y-6">
+                            {/* Right: Sidebar */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                 {/* Skill Radar */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Skill Profile</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="h-[250px] w-full relative">
-                                            {data.skills.radar.length > 2 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.skills.radar}>
-                                                        <PolarGrid stroke="hsl(var(--border))" />
-                                                        <PolarAngleAxis dataKey="topic" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                                        <Radar name="Mastery" dataKey="mastery" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
-                                                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} />
-                                                    </RadarChart>
-                                                </ResponsiveContainer>
-                                            ) : (
-                                                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm text-center px-6">
-                                                    Complete more sessions covering different topics to build your radar.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Mistake Patterns */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Focus Areas</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {data.mistakes.length > 0 ? (
-                                            <div className="space-y-3">
-                                                {data.mistakes.slice(0, 3).map((mistake, i) => (
-                                                    <div key={i} className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/20">
-                                                        <div className="flex items-start gap-3">
-                                                            <AlertCircle className="w-4 h-4 text-rose-500 mt-1 shrink-0" />
-                                                            <div>
-                                                                <h4 className="text-sm font-medium text-foreground">{mistake.description}</h4>
-                                                                <p className="text-xs text-rose-500/80 mt-1">Occurred {mistake.frequency} times</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                <div style={{
+                                    background: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    border: '1px solid #E5E7EB',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    padding: '24px'
+                                }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
+                                        Skill Profile
+                                    </p>
+                                    <div style={{ height: '240px', position: 'relative' }}>
+                                        {data.skills.radar.length > 2 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.skills.radar}>
+                                                    <PolarGrid stroke="#E5E7EB" />
+                                                    <PolarAngleAxis dataKey="topic" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+                                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                                    <Radar name="Mastery" dataKey="mastery" stroke="#2563EB" fill="#2563EB" fillOpacity={0.15} />
+                                                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', borderRadius: '10px' }} />
+                                                </RadarChart>
+                                            </ResponsiveContainer>
                                         ) : (
-                                            <div className="py-8 text-center text-muted-foreground text-sm">
-                                                No recurring mistakes found. Excellent work!
+                                            <div style={{
+                                                position: 'absolute', inset: 0,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                textAlign: 'center'
+                                            }}>
+                                                <p style={{ fontSize: '13px', color: '#9CA3AF', padding: '0 16px' }}>
+                                                    Complete more sessions to build your radar.
+                                                </p>
                                             </div>
                                         )}
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
 
-                                {/* Domain Distribution */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Domain Focus</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="h-[200px]">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={data.domains}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={80}
-                                                        paddingAngle={5}
-                                                        dataKey="totalQuestions"
-                                                    >
-                                                        {data.domains.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 mt-4">
-                                            {data.domains.slice(0, 4).map((d, i) => (
-                                                <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                                                    <span className="truncate max-w-[100px]">{d.domain}</span>
+                                {/* Focus Areas (Mistakes) */}
+                                <div style={{
+                                    background: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    border: '1px solid #E5E7EB',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    padding: '24px'
+                                }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
+                                        Focus Areas
+                                    </p>
+                                    {data.mistakes.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {data.mistakes.slice(0, 3).map((mistake, i) => (
+                                                <div key={i} style={{
+                                                    padding: '14px 16px',
+                                                    borderRadius: '12px',
+                                                    background: '#FEF2F2',
+                                                    border: '1px solid #FECACA'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                                        <AlertCircle style={{ width: '16px', height: '16px', color: '#DC2626', marginTop: '2px', flexShrink: 0 }} />
+                                                        <div>
+                                                            <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', marginBottom: '4px' }}>
+                                                                {mistake.description}
+                                                            </p>
+                                                            <p style={{ fontSize: '12px', color: '#EF4444' }}>
+                                                                Occurred {mistake.frequency} times
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    ) : (
+                                        <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                                            <p style={{ fontSize: '13px', color: '#9CA3AF' }}>
+                                                No recurring mistakes found. Excellent work!
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Domain Distribution */}
+                                <div style={{
+                                    background: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    border: '1px solid #E5E7EB',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                    padding: '24px'
+                                }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
+                                        Domain Focus
+                                    </p>
+                                    <div style={{ height: '180px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={data.domains}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={55}
+                                                    outerRadius={75}
+                                                    paddingAngle={4}
+                                                    dataKey="totalQuestions"
+                                                    strokeWidth={0}
+                                                >
+                                                    {data.domains.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', borderRadius: '10px' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                                        {data.domains.slice(0, 4).map((d, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                                                <span style={{ fontSize: '12px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {d.domain}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </>
@@ -360,25 +475,49 @@ export default function DashboardPage() {
 
 function LoadingScreen() {
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-muted-foreground mt-4 animate-pulse">Loading Dashboard...</p>
+        <div style={{
+            minHeight: '100vh', background: '#F9FAFB',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: '16px',
+            fontFamily: 'Inter, Helvetica Neue, system-ui, sans-serif'
+        }}>
+            <div style={{
+                width: '40px', height: '40px',
+                border: '3px solid #E5E7EB',
+                borderTopColor: '#2563EB',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite'
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <p style={{ fontSize: '14px', color: '#9CA3AF' }}>Loading Dashboard...</p>
         </div>
     );
 }
 
 function EmptyState() {
     return (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <div className="w-24 h-24 rounded-full bg-surface border border-border flex items-center justify-center mb-6 shadow-xl">
-                <span className="text-4xl">🚀</span>
+        <div style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '80px 24px', textAlign: 'center'
+        }}>
+            <div style={{
+                width: '80px', height: '80px', borderRadius: '20px',
+                background: '#EFF6FF', border: '1px solid #BFDBFE',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '24px', fontSize: '36px'
+            }}>
+                🚀
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Begin Your Journey</h2>
-            <p className="text-muted-foreground max-w-md mb-8">
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', marginBottom: '12px' }}>
+                Begin Your Journey
+            </h2>
+            <p style={{ fontSize: '15px', color: '#6B7280', maxWidth: '420px', lineHeight: 1.65, marginBottom: '32px' }}>
                 Your analytics will appear here after your first interview session. Start practicing to unlock insights.
             </p>
             <Link href="/interview">
-                <Button variant="primary" size="xl">
+                <Button variant="primary" size="lg" icon={ArrowRight}>
                     Start First Interview
                 </Button>
             </Link>
@@ -386,21 +525,33 @@ function EmptyState() {
     );
 }
 
-function KpiCard({ title, value, trend, color, bg, icon: Icon }) {
+function KpiCard({ title, value, trend, accentColor, accentBg, icon: Icon }) {
     return (
-        <Card>
-            <CardContent className="flex items-start justify-between p-6">
+        <div style={{
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1px solid #E5E7EB',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            padding: '24px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div>
-                    <p className="text-muted-foreground text-sm font-medium mb-1">{title}</p>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-foreground">{value}</span>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                        {title}
+                    </p>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+                        {value}
                     </div>
-                    <span className="text-xs text-muted-foreground font-medium mt-1 block">{trend}</span>
+                    <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>{trend}</span>
                 </div>
-                <div className={`p-3 rounded-xl ${bg} ${color} border border-border/50`}>
-                    <Icon className="w-6 h-6" />
+                <div style={{
+                    padding: '10px', borderRadius: '12px',
+                    background: accentBg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <Icon style={{ width: '20px', height: '20px', color: accentColor }} />
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

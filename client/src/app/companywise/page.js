@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import AnswerEditor from "@/components/ui/AnswerEditor"
+import InterviewChat from "@/components/ui/InterviewChat"
 
 const PHASES = {
     SETUP: 'setup',
@@ -59,6 +60,7 @@ export default function CompanyWisePage() {
 
     // Report state
     const [report, setReport] = useState(null)
+    const [messages, setMessages] = useState([])
 
     // UI state
     const [isLoading, setIsLoading] = useState(false)
@@ -134,8 +136,42 @@ export default function CompanyWisePage() {
             setCurrentQuestion(response.data.question)
             setStartTime(Date.now())
             setPhase(PHASES.QUESTION)
+
+            // Initialize chat with first question
+            setMessages([
+                {
+                    role: 'interviewer',
+                    type: 'question',
+                    text: response.data.question.text,
+                    id: response.data.question.id
+                }
+            ])
         } catch (err) {
             setError(err.message || 'Failed to start interview')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const askDoubt = async (doubt) => {
+        setIsLoading(true)
+        try {
+            // Add user doubt to chat
+            const userDoubt = { role: 'user', type: 'doubt', text: doubt, id: Date.now() }
+            setMessages(prev => [...prev, userDoubt])
+
+            const response = await api.askClarification(sessionId, doubt)
+
+            // Add interviewer response
+            const interviewerReply = {
+                role: 'interviewer',
+                type: 'clarification',
+                text: response.data.message,
+                id: Date.now() + 1
+            }
+            setMessages(prev => [...prev, interviewerReply])
+        } catch (err) {
+            console.error('Failed to ask doubt:', err)
         } finally {
             setIsLoading(false)
         }
@@ -149,18 +185,39 @@ export default function CompanyWisePage() {
 
         try {
             const responseTimeMs = Date.now() - startTime
+
+            // Add user answer to chat
+            const userAnswer = { role: 'user', type: 'answer', text: answer.trim(), id: Date.now() }
+            setMessages(prev => [...prev, userAnswer])
+
             const response = await api.submitAnswer(sessionId, {
                 questionId: currentQuestion.id,
                 answer: answer.trim(),
                 responseTimeMs,
                 drawingData,
             })
-            setEvaluation(response.data.evaluation)
-            setFeedback(response.data.feedback)
-            setSessionState(response.data.state)
 
-            if (response.data.action === 'end_session') {
-                setReport(response.data.report)
+            const { evaluation, feedback, interviewerMessage, state, action, report: sessionReport } = response.data
+
+            setEvaluation(evaluation)
+            setFeedback(feedback)
+            setSessionState(state)
+
+            // Add interviewer commentary to chat
+            if (interviewerMessage) {
+                const commentary = {
+                    role: 'interviewer',
+                    type: 'commentary',
+                    text: interviewerMessage.message,
+                    evaluation,
+                    feedback,
+                    id: Date.now() + 1
+                }
+                setMessages(prev => [...prev, commentary])
+            }
+
+            if (action === 'end_session') {
+                setReport(sessionReport)
                 setPhase(PHASES.REPORT)
             } else {
                 setPhase(PHASES.FEEDBACK)
@@ -182,13 +239,24 @@ export default function CompanyWisePage() {
                 await endInterview()
                 return
             }
-            setCurrentQuestion(response.data.question)
+
+            const nextQuestion = response.data.question
+            setCurrentQuestion(nextQuestion)
             setSessionState(response.data.state)
             setAnswer('')
             setHint(null)
             setHintCount(0)
             setStartTime(Date.now())
             setPhase(PHASES.QUESTION)
+
+            // Add next question to chat
+            const interviewerQuestion = {
+                role: 'interviewer',
+                type: 'question',
+                text: (nextQuestion.interviewerIntro ? nextQuestion.interviewerIntro + " " : "") + nextQuestion.text,
+                id: nextQuestion.id
+            }
+            setMessages(prev => [...prev, interviewerQuestion])
         } catch (err) {
             setError(err.message || 'Failed to get next question')
         } finally {
@@ -199,8 +267,17 @@ export default function CompanyWisePage() {
     const getHintHandler = async () => {
         try {
             const response = await api.getHint(sessionId, hintCount + 1)
-            setHint(response.data.hint)
+            const hintText = response.data.hint
+            setHint(hintText)
             setHintCount(prev => prev + 1)
+
+            // Add hint as interviewer message
+            setMessages(prev => [...prev, {
+                role: 'interviewer',
+                type: 'hint',
+                text: `Hint ${hintCount + 1}: ${hintText}`,
+                id: Date.now()
+            }])
         } catch (err) {
             console.error('Failed to get hint:', err)
         }
@@ -231,6 +308,7 @@ export default function CompanyWisePage() {
         setHint(null)
         setHintCount(0)
         setError(null)
+        setMessages([])
     }
 
     const getScoreColor = (score) => {

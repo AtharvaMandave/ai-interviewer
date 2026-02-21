@@ -10,35 +10,42 @@ export function cn(...inputs) {
 }
 
 const variants = {
-    // Primary: Brand color
-    primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm active:scale-[0.98]",
+    // Primary — Solid brand color, white text
+    primary:
+        "bg-[#2563EB] text-white hover:bg-[#1D4ED8] active:bg-[#1E40AF] shadow-sm active:scale-[0.98]",
 
-    // Secondary: Muted background
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    // Secondary — Light gray background, dark text
+    secondary:
+        "bg-[#F3F4F6] text-[#111827] border border-[#E5E7EB] hover:bg-[#E5E7EB] active:scale-[0.98]",
 
-    // Outline: Bordered
-    outline: "bg-background border border-input hover:bg-accent hover:text-accent-foreground",
+    // Outline — Bordered, transparent bg
+    outline:
+        "bg-white text-[#111827] border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] active:scale-[0.98]",
 
-    // Ghost: Transparent hover
-    ghost: "hover:bg-accent hover:text-accent-foreground",
+    // Ghost — Transparent, subtle hover
+    ghost:
+        "text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]",
 
-    // Destructive: Red
-    desctructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-    danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm", // Alias for destructive
+    // Destructive
+    desctructive:
+        "bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm active:scale-[0.98]",
+    danger:
+        "bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm active:scale-[0.98]",
 
     // Success
-    success: "bg-success text-white hover:bg-success/90 shadow-sm",
+    success:
+        "bg-[#10B981] text-white hover:bg-[#059669] shadow-sm active:scale-[0.98]",
 
-    // Link: Underline on hover
-    link: "text-primary underline-offset-4 hover:underline",
+    // Link
+    link: "text-[#2563EB] underline-offset-4 hover:underline p-0 h-auto",
 };
 
 const sizes = {
-    sm: "h-8 px-3 text-xs",
-    md: "h-10 px-4 text-sm",
-    lg: "h-12 px-6 text-base",
-    xl: "h-14 px-8 text-lg font-semibold",
-    icon: "h-10 w-10 p-2 justify-center aspect-square",
+    sm: "h-8 px-3 text-xs rounded-[8px]",
+    md: "h-10 px-4 text-sm rounded-[10px]",
+    lg: "h-11 px-6 text-sm rounded-[10px]",
+    xl: "h-12 px-8 text-base font-semibold rounded-[12px]",
+    icon: "h-10 w-10 p-2 justify-center aspect-square rounded-[10px]",
 };
 
 export function Button({
@@ -56,14 +63,15 @@ export function Button({
     ...props
 }) {
     const baseStyles =
-        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap";
+        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap cursor-pointer";
 
-    // Combine classes
     const classes = cn(
         baseStyles,
         variants[variant],
         sizes[size],
         fullWidth ? "w-full" : "",
+        // hover lift only for non-ghost/link
+        !["ghost", "link"].includes(variant) ? "hover:-translate-y-px" : "",
         className
     );
 

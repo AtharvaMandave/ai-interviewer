@@ -310,6 +310,15 @@ class ApiService {
             : `/dashboard/leaderboard?limit=${limit}`;
         return this.request(url);
     }
+
+    // ============= INTERVIEW CLARIFICATION =============
+
+    async askClarification(sessionId, doubt) {
+        return this.request(`/interview/${sessionId}/clarify`, {
+            method: 'POST',
+            body: JSON.stringify({ doubt }),
+        });
+    }
 }
 
 export const api = new ApiService();

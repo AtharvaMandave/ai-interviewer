@@ -28,27 +28,27 @@ export default function AnswerEditor({
             </label>
 
             <div className="relative group">
-                {/* Glow effect */}
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-500 group-focus-within:opacity-100" />
+                {/* Subtle Glow effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/10 to-blue-500/10 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500 group-focus-within:opacity-100" />
 
-                <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl transition-colors duration-300 focus-within:border-violet-500/50 focus-within:bg-black/60">
+                <div className="relative bg-card rounded-2xl border border-border overflow-hidden shadow-sm transition-all duration-300 focus-within:border-violet-500/30 focus-within:ring-2 focus-within:ring-violet-500/5">
                     <textarea
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder={placeholder}
                         disabled={disabled}
-                        className="w-full min-h-[320px] bg-transparent p-6 text-zinc-100 placeholder:text-zinc-600 resize-y focus:outline-none font-mono text-sm leading-8 scrollbar-thin scrollbar-thumb-violet-500/20 scrollbar-track-transparent selection:bg-violet-500/30"
+                        className="w-full min-h-[320px] bg-transparent p-6 text-foreground placeholder:text-muted-foreground resize-y focus:outline-none font-sans text-sm leading-7 scrollbar-thin scrollbar-thumb-violet-500/10 scrollbar-track-transparent selection:bg-violet-500/10"
                         spellCheck={false}
                     />
 
                     {/* Toolbar */}
-                    <div className="flex items-center flex-wrap gap-3 px-4 py-3 border-t border-white/5 bg-white/5 backdrop-blur-md">
+                    <div className="flex items-center flex-wrap gap-3 px-4 py-3 border-t border-border bg-surface/30">
                         <VoiceInput
                             onTranscript={handleTranscript}
                             disabled={disabled}
                         />
 
-                        <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
+                        <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 
                         <div className="flex-1 min-w-[200px]">
                             <Whiteboard
@@ -58,7 +58,7 @@ export default function AnswerEditor({
                         </div>
 
                         {/* Character count */}
-                        <div className="flex items-center gap-4 text-xs font-mono text-zinc-500 ml-auto">
+                        <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-wider text-muted-foreground ml-auto">
                             <span>{value.split(/\s+/).filter(Boolean).length} words</span>
                             <span>{value.length} chars</span>
                         </div>

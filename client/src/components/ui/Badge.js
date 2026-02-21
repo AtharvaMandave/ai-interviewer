@@ -3,27 +3,19 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// Combine classes utility
 export function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
 const variants = {
-    // Default: Neutral
-    neutral: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-
-    // Primary: Brand color
-    primary: "border-transparent bg-primary/10 text-primary hover:bg-primary/20",
-
-    // Status (using our semantic tokens slightly adapted for badges)
-    success: "border-transparent bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25",
-    warning: "border-transparent bg-amber-500/15 text-amber-500 hover:bg-amber-500/25",
-    danger: "border-transparent bg-destructive/15 text-destructive hover:bg-destructive/25",
-    info: "border-transparent bg-blue-500/15 text-blue-500 hover:bg-blue-500/25",
-
-    // Special
-    accent: "border-transparent bg-purple-500/15 text-purple-500 hover:bg-purple-500/25",
-    outline: "text-foreground border-border hover:bg-accent hover:text-accent-foreground",
+    neutral: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
+    primary: "bg-[#EFF6FF] text-[#2563EB] border-[#DBEAFE]",
+    success: "bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]",
+    warning: "bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]",
+    danger: "bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]",
+    info: "bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]",
+    accent: "bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]",
+    outline: "bg-white text-[#374151] border-[#E5E7EB]",
 };
 
 export function Badge({
@@ -34,12 +26,10 @@ export function Badge({
     ...props
 }) {
     const classes = cn(
-        "inline-flex items-center justify-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-        // Sizes
-        size === "xs" && "text-[10px] px-1.5 py-0.5 h-5",
+        "inline-flex items-center justify-center rounded-full border font-medium transition-colors",
+        size === "xs" && "text-[10px] px-2 py-0.5 h-5",
         size === "sm" && "text-xs px-2.5 py-0.5 h-6",
-        size === "md" && "text-sm px-3 py-1 h-8",
-        // Variant
+        size === "md" && "text-sm px-3 py-1 h-7",
         variants[variant],
         className
     );
